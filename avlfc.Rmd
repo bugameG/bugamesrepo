@@ -1,0 +1,655 @@
+---
+title: "Premier League 2023/2024: Aston Villa FC"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    favicon: villa_crest.jpeg
+    social: [twitter, linkedin]
+    theme: united
+
+---
+
+```{r ,global_options, include=FALSE}
+library(knitr)
+opts_chunk$set(message=FALSE, warning=FALSE, tidy.opts = list(width.cutoff=60))
+suppressPackageStartupMessages(library(ggthemes))
+suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(shiny))
+suppressPackageStartupMessages(library(flexdashboard))
+suppressPackageStartupMessages(library(pander))
+suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(ggvis))
+suppressPackageStartupMessages(library(viridis))
+suppressPackageStartupMessages(library(readxl))
+suppressPackageStartupMessages(library(ggplotlyExtra))
+
+epl=data.frame(read.csv("matches.csv", header=TRUE))
+avl<-epl[epl$Team=="AstonVilla",]
+
+```
+
+Introduction
+=============================================================
+
+Column
+---------------------------------------------------------------
+Aston Villa FC return to the UEFA Champions League after an absence of nearly 40 years. This is after securing a 4th place finish in the just concluded 2023/2024 Premier League season. This dashboard looks at how 'The Villains' performed in the just concluded season.
+
+### 
+
+![](C:/Users/Admin/Desktop/gift/statistical%20computing/villa_ucl.jpg)
+
+
+Column
+-------------------------------------------------------------
+
+### 
+
+![](C:/Users/Admin/Desktop/gift/statistical%20computing/villa_wembley.jpg)
+
+
+### Unai Emery
+
+![](C:/Users/Admin/Desktop/gift/statistical%20computing/unaiemery.jpg)
+
+Players {data-orientation="rows"}
+===========================================================
+
+Row
+------------------------------------------------------------
+```{r}
+## PLAYERS' DATASET
+sheets<-excel_sheets("Soccer-Stats-Premier-League-2023-2024_Final_20240610.xlsx")
+players<-data.frame(read_excel("Soccer-Stats-Premier-League-2023-2024_Final_20240610.xlsx",
+                               sheet = sheets[4]))
+
+# dim(players) # 746 rows by 27 columns
+# Checking for duplicates  
+# players[duplicated(players), ]  # No duplicates found
+# Checking for missing values
+# players[!complete.cases(players), ] # 572 cases with NAs  
+#players<-players[complete.cases(players), ]# 487 complete cases
+players1<-players[,c(2,7,9,10,12,20,23,24,25,26)]
+
+# DATA TYPE CONVERTION
+players1$Name<-factor(players1$Name)
+players1$Team<-factor(players1$Team)
+players1$Position<-factor(players1$Position)
+```
+
+### Registered players
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa") %>% 
+  count() %>% 
+  valueBox(color="#95bfe5")
+```
+
+### Goalkeepers
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa",
+         Position == "Goalkeeper") %>% 
+  count() %>% 
+  valueBox(color="#95bfe5")
+```
+
+### Defenders
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa",
+         Position == "Defender") %>% 
+  count() %>% 
+  valueBox(color = "#95bfe5")
+```
+
+### Midfielders
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa",
+         Position == "Midfielder") %>% 
+  count() %>% 
+  valueBox(color="#95bfe5")
+```
+
+### Forwards
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa",
+         Position == "Forward") %>% 
+  count() %>% 
+  valueBox(color="#95bfe5")
+```
+
+### Average age (years)
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa") %>% 
+  summarise(round(mean(Age),0)) %>% 
+  valueBox(color="#95bfe5")
+```
+
+Row {.tabset .tabset-fade}
+----------------------------------------------------------------
+
+### Goalkeepers
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa",
+         Position == "Goalkeeper") %>% 
+  select(Citizenship, Name, Jersey) %>% 
+  pander()
+```
+
+### Defenders
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa",
+         Position == "Defender") %>% 
+  select(Citizenship, Name, Jersey) %>% 
+  pander()
+```
+
+### Midfielders
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa",
+         Position == "Midfielder") %>% 
+  select(Citizenship, Name, Jersey) %>% 
+  pander()
+```
+
+### Defenders
+
+```{r}
+players %>% 
+  filter(Team == "Aston Villa",
+         Position == "Forward") %>% 
+  select(Citizenship, Name, Jersey) %>% 
+  pander()
+```
+
+
+Outcomes
+=========================================================
+
+Column
+-------------------------------------------------------
+### Home
+
+
+```{r}
+cat("Wins","[%]")
+#avl %>% 
+  #filter(Venue == "Home" & Result=="W") %>% 
+  #summarise(win.pct.h=n()*100/19) %>% 
+  gauge(63.16, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(80,100),
+                     warning =c(40,79),
+                     danger = c(0,39)))
+
+```
+
+### 
+
+```{r}
+cat("Draws","[%]")
+#avl %>% 
+  #filter(Venue == "Home" & Result=="D") %>% 
+  #summarise(draw.pct.h=n()*100/19) %>% 
+  gauge(21.05, min=0,max=100,symbol="%")
+
+```
+
+### 
+
+```{r}
+cat("Losses","[%]")
+#avl %>% 
+  #filter(Venue == "Home" & Result=="L") %>% 
+  #summarise(loss.pct.h=n()*100/19) %>% 
+  gauge(15.79, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(0,39),
+                     warning =c(40,79),
+                     danger = c(80,100)))
+
+```
+
+Column
+-------------------------------------------------------
+### Away
+
+
+```{r}
+cat("Wins","[%]")
+#avl %>% 
+  #filter(Venue == "Away" & Result=="W") %>% 
+  #summarise(win.pct.a=n()*100/19) %>% 
+  gauge(42.11, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(80,100),
+                     warning =c(40,79),
+                     danger = c(0,39)))
+
+```
+
+### 
+
+```{r}
+cat("Draws","[%]")
+#avl %>% 
+  #filter(Venue == "Away" & Result=="D") %>% 
+  #summarise(draw.pct.a=n()*100/19) %>% 
+  gauge(21.05, min=0,max=100,symbol="%")
+
+```
+
+### 
+
+```{r}
+cat("Losses","[%]")
+#avl %>% 
+  #filter(Venue == "Away" & Result=="L") %>% 
+  #summarise(loss.pct.a=n()*100/19) %>% 
+  gauge(36.84, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(0,39),
+                     warning =c(40,79),
+                     danger = c(80,100)))
+```
+
+Awards
+===========================================================
+
+Column
+------------------------------------------------------------
+### Goals scored
+
+```{r, fig.align="top", out.width="10%"}
+include_graphics(
+"C://Users//Admin//Desktop//gift//statistical computing//watkins.png")
+```
+
+### 
+```{r}
+players1 %>%
+  filter(Team == "Aston Villa",
+         totalGoals >= 1) %>% 
+  select(Name, totalGoals) %>%
+  arrange(desc(totalGoals)) %>% 
+  pander()
+  
+```
+
+Column
+------------------------------------------------------------
+### Goal Assists
+
+```{r, fig.align="top", out.width="10%"}
+include_graphics(
+"C://Users//Admin//Desktop//gift//statistical computing//watkins.png")
+```
+
+###
+```{r}
+players1 %>%
+  filter(Team == "Aston Villa",
+         goalAssists >= 1) %>% 
+  select(Name, goalAssists) %>%
+  arrange(desc(goalAssists)) %>% 
+  pander()
+  
+```
+
+
+Villa Park
+===========================================================
+
+Column 
+-----------------------------------------------------------
+### 
+
+```{r, fig.align="top", out.width="40%"}
+include_graphics(
+"C://Users//Admin//Desktop//gift//statistical computing//villa_parkonee.jpg")
+```
+
+### 
+
+```{r, fig.align="bottom", out.width="20%"}
+include_graphics(
+"C://Users//Admin//Desktop//gift//statistical computing//villa_parktwo.jpg")
+```
+
+Column{.tabset .tabset-fade}
+-------------------------------------------------------------
+
+### Notes
+
+Villa Park played host to 19 Premier League home games over the 2023/24 campaign. The average match attendance stands at **41,858**.
+
+The highest attendance was recorded in **March 2024** against **Wolves** (full attendance) and the lowest at **40,636** against **Brighton & Hove Albion** in **September of 2023**.
+
+
+### Home matches
+
+```{r}
+avl.home<-
+  avl[avl$Venue == "Home",]%>% 
+  select(c(Round,Opponent,Attendance)) %>% 
+  arrange(desc(Attendance)) %>%
+  mutate(percent =   round(Attendance*100/(42640),2))%>% 
+  datatable(rownames=FALSE,options=list(searching=TRUE, pagelength=5), width=75); avl.home  
+```
+
+### Distribution
+
+```{r}
+avl.at.home<-avl[avl$Venue=="Home", ]
+avl.attendance<-ggplot(avl.at.home, aes(x=Date,y=Attendance))+
+  geom_point(shape=20, size=4, color="#7b003a", alpha=0.85)+
+  geom_hline(aes(yintercept=round(mean(Attendance),0)))+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Time",
+       y="Attendance",
+       title="Premier League\nhome attendance:Villa Park 2023/24")+
+  theme_pander()
+
+plotly::ggplotly(p=avl.attendance)
+```
+
+Goals scored {data-navmenu="Offensive record"}
+=======================================================
+
+```{r , fig.width=14, fig.height=5}
+offensive1<-epl %>% 
+  group_by(Team) %>% 
+  summarise(goals_scored = sum(GF)) %>% 
+  arrange(desc(goals_scored)) %>% 
+  head(10)  
+
+GS<-ggplot(offensive1,aes(x=reorder(Team, goals_scored), y=goals_scored))+
+  geom_bar(stat='identity', fill = "#7b003a", alpha=0.85)+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+ labs(x="Teams",
+      y="Goals scored",
+      title="Goals scored:\nPremier League 2023/2024",
+      subtitle = "Top 10")+
+  theme_pander()
+
+ggplotly(GS)
+```
+
+Column
+-------------------------------------------------------------
+
+### Position
+
+```{r,fig.width=4}
+epl %>% 
+  group_by(Team) %>% 
+  summarise(total.goals = sum(GF)) %>%
+  arrange(desc(total.goals)) %>% 
+  mutate(position = min_rank(-total.goals)) %>% 
+  filter(Team == "AstonVilla") %>% 
+  select(position) %>%
+  valueBox(color="#95bfe5")
+```
+
+### Goals scored
+
+```{r,fig.width=4}
+valueBox(value=sum(avl$GF), color="#95bfe5")
+```
+
+Column
+-------------------------------------------------------------
+
+### Home Goals
+
+```{r, fig.width=4}
+
+valueBox(value = sum(avl.at.home$GF), color="#95bfe5")
+```
+
+### Away Goals
+
+```{r, fig.width=4}
+valueBox(value=sum(avl$GF)-sum(avl.at.home$GF), color="#95bfe5")
+```
+
+# Shots {data-navmenu="Offensive record"}
+
+```{r ,fig.width=14, fig.height=5}
+offensive2<-epl %>% 
+  group_by(Team) %>%
+  summarise(Shot_accuracy = sum(SoT)*100/sum(Sh)) %>% 
+  arrange(desc(Shot_accuracy)) %>% 
+  head(10) 
+
+SOT<-ggplot(offensive2 ,aes(x=reorder(Team, Shot_accuracy), y=Shot_accuracy))+
+  geom_bar(stat='identity', fill = "#7b003a", alpha=0.85)+
+  theme_pander()+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Teams",
+       y="Percentage",
+       title="Goals scored:\nPremier League 2023/2024",
+       subtitle = "Top 10 ")
+
+ggplotly(SOT)
+```
+
+Column
+-------------------------------------------------------------
+
+### Position
+
+```{r,fig.width=4}
+epl %>% 
+  group_by(Team) %>% 
+  summarise(shot.acc = sum(SoT)*100/sum(Sh)) %>%
+  arrange(desc(shot.acc)) %>% 
+  mutate(position = min_rank(-shot.acc)) %>% 
+  filter(Team == "AstonVilla") %>% 
+  select(position) %>% 
+  valueBox(color="#95bfe5")
+```
+
+### Shot accuracy [%]
+
+```{r,fig.width=4}
+valueBox(value=round(sum(avl$SoT)*100/sum(avl$Sh), 2)
+, color="#95bfe5")
+```
+
+# Possession {data-navmenu="Offensive record"}
+
+```{r ,fig.width=14, fig.height=5}
+offensive3<-epl %>% 
+  group_by(Team) %>%
+  summarise(avg.poss = mean(Poss)) %>% 
+  arrange(desc(avg.poss)) %>% 
+  head(10)  
+
+POSS<-ggplot(offensive3, aes(x=reorder(Team, avg.poss), y=avg.poss))+
+  geom_bar(stat='identity', fill = 
+             "#7b003a", alpha=0.85)+
+  theme_pander()+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Teams",
+       y="Percentage",
+       title="Average ball possession [%]:\nPremier League 2023/2024",
+       subtitle = "Top 10")
+
+ggplotly(POSS)
+```
+
+Column
+-------------------------------------------------------------
+
+### Position
+
+```{r,fig.width=4}
+epl %>% 
+  group_by(Team) %>% 
+  summarise(avg.poss = mean(Poss)) %>%
+  arrange(desc(avg.poss)) %>% 
+  mutate(position = min_rank(-avg.poss)) %>% 
+  filter(Team == "AstonVilla") %>% 
+  select(position) %>%
+ valueBox(color="#95bfe5")
+```
+
+### Average possesion [%]
+
+```{r,fig.width=4}
+valueBox(value=round(mean(avl$Poss), 2)
+, color="#95bfe5")
+```
+
+# Goals conceded {data-navmenu="Defensive record"}
+
+```{r ,fig.width=14, fig.height=5}
+defensive1<-epl %>% 
+  group_by(Team) %>%
+  summarise(gc = sum(GA)) %>% 
+  arrange(gc) %>% 
+  head(10) 
+CONC<-ggplot(defensive1, aes(x=reorder(Team, gc), y=gc))+
+  geom_bar(stat='identity', fill = "#7b003a", alpha=0.85)+
+  theme_pander()+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Teams",
+       y="goals",
+       title="Goals conceded:\nPremier League 2023/2024",
+       subtitle = "Top 10:Least conceded goals")
+
+ggplotly(CONC)
+```
+
+Column
+-------------------------------------------------------------
+
+### Position
+
+```{r,fig.width=4}
+epl %>% 
+  group_by(Team) %>% 
+  summarise(g.c = sum(GA)) %>%
+  arrange(desc(g.c)) %>% 
+  mutate(position = min_rank(g.c)) %>% 
+  filter(Team == "AstonVilla") %>% 
+  select(position) %>% 
+ valueBox(color="#95bfe5")
+```
+
+### Goals conceded
+
+```{r,fig.width=4}
+valueBox(value=sum(avl$GA), color="#95bfe5")
+```
+
+Column
+-------------------------------------------------------------
+
+### At Home
+
+```{r, fig.width=4}
+
+valueBox(value = sum(avl.at.home$GA), color="#95bfe5")
+```
+
+### Away
+
+```{r, fig.width=4}
+valueBox(value=sum(avl$GA)-sum(avl.at.home$GA), color="#95bfe5")
+```
+
+# Clean sheets {data-navmenu="Defensive record"}
+
+```{r,fig.width=14, fig.height=5}
+defensive2<-epl[epl$GA == 0, ] %>% 
+  group_by(Team) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  head(10)
+  
+CS<-ggplot(defensive2,aes(x=reorder(Team, n), y=n))+
+  geom_bar(stat='identity', fill = "#7b003a", alpha=0.85)+
+  theme_pander()+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Teams",
+       y="Frequency",
+       title="Clean sheets:\nPremier League 2023/2024",
+       subtitle = "Top 10") 
+
+ggplotly(CS)
+```
+
+Column
+-------------------------------------------------------------
+
+### Position
+
+```{r}
+epl[epl$GA == 0, ] %>% 
+  group_by(Team) %>% 
+  summarise(c.s = n()) %>%
+  mutate(position = min_rank(-c.s)) %>%
+  arrange(desc(c.s)) %>% 
+  filter(Team == "AstonVilla") %>% 
+  select(position) %>%
+  valueBox(color="#95bfe5")
+```
+
+### Clean sheets
+
+```{r}
+avl[avl$GA==0,] %>% 
+  count() %>% 
+  valueBox(color="#95bfe5")
+```
+
+## Column
+
+### At home
+
+```{r}
+# avl.at.home[avl.at.home$GA == 0,] %>%
+#  count() 
+avl[avl$Venue == "Home",] %>%
+  filter(GA == 0) %>% 
+  nrow() %>% 
+  valueBox(color="#95bfe5")
+```
+
+### Away
+
+```{r}
+# 8-4 = 4
+avl[avl$Venue == "Away",] %>%
+  filter(GA == 0) %>% 
+  nrow() %>%
+  valueBox(color="#95bfe5")
+```
+
+
+References
+============================================================
+
+- [www.kaggle.com/datasets/mertbayraktar/english-premier-league-matches-20232024-season](www.kaggle.com/datasets/mertbayraktar/english-premier-league-matches-20232024-season)
+
+- [https://pkgs.rstudio.com/flexdashboard/](https://pkgs.rstudio.com/flexdashboard/)
+
+- [https://www.excel4soccer.com/
+](https://www.excel4soccer.com/
+)
