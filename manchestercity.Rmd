@@ -1,0 +1,675 @@
+---
+title: "Premier League 2023/2024: Manchester City"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: 
+      bg: "#FFFFFF"
+      fg: "#1C2C5B" 
+      primary: "#6CABDD"
+    orientation: columns
+    vertical_layout: scroll
+    social: [twitter, linkedin]
+    favicon: IMG_20240907_141449.jpg
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(message=FALSE, warning=FALSE, tidy.opts = list(width.cutoff=60))
+suppressPackageStartupMessages(library(ggthemes))
+suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(shiny))
+suppressPackageStartupMessages(library(flexdashboard))
+suppressPackageStartupMessages(library(pander))
+suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(ggvis))
+suppressPackageStartupMessages(library(viridis))
+suppressPackageStartupMessages(library(readxl))
+suppressPackageStartupMessages(library(ggplotlyExtra))
+
+epl=data.frame(read.csv("matches.csv", header=TRUE))
+mci<-epl[epl$Team=="ManchesterCity",]
+```
+
+
+Introduction
+=============================================================
+
+Column
+---------------------------------------------------------------
+
+Manchester City is a professional football club based in Manchester, England. The team took part in the 2023/24 Premier League season and won their fourth successive title under manager Pep Guardiola. The Cityzens took their tally of Premier League trophies to 7. They also booked a spot in next season's revamped UEFA Champions League.This dashboard looks at the club's on-the-pitch performance in the English top flight division.
+
+### Pep Guardiola
+
+```{r}
+include_graphics(
+"IMG_20240907_141531.jpg")
+```
+
+
+Column
+---------------------------------------------------------------
+### 
+
+```{r}
+include_graphics(
+"IMG_20240907_141512.jpg")
+```
+
+
+### 
+
+```{r}
+include_graphics(
+"wp11075864-etihad-stadium-2022-wallpapers.jpg")
+```
+
+Players {data-orientation="rows"}
+===========================================================
+
+Row
+------------------------------------------------------------
+```{r}
+## PLAYERS' DATASET
+sheets<-excel_sheets("Soccer-Stats-Premier-League-2023-2024_Final_20240610.xlsx")
+players<-data.frame(read_excel("Soccer-Stats-Premier-League-2023-2024_Final_20240610.xlsx",
+                               sheet = sheets[4]))
+
+# dim(players) # 746 rows by 27 columns
+# Checking for duplicates  
+# players[duplicated(players), ]  # No duplicates found
+# Checking for missing values
+# players[!complete.cases(players), ] # 572 cases with NAs  
+#players<-players[complete.cases(players), ]# 487 complete cases
+players1<-players[,c(2,7,9,10,12,20,23,24,25,26)]
+
+# DATA TYPE CONVERTION
+players1$Name<-factor(players1$Name)
+players1$Team<-factor(players1$Team)
+players1$Position<-factor(players1$Position)
+```
+
+### Registered players
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City") %>% 
+  count() %>% 
+  valueBox(color="#FFC659")
+```
+
+### Goalkeepers
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City",
+         Position == "Goalkeeper") %>% 
+  count() %>% 
+  valueBox(color="#FFC659")
+```
+
+### Defenders
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City",
+         Position == "Defender") %>% 
+  count() %>% 
+  valueBox(color = "#FFC659")
+```
+
+### Midfielders
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City",
+         Position == "Midfielder") %>% 
+  count() %>% 
+  valueBox(color="#FFC659")
+```
+
+### Forwards
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City",
+         Position == "Forward") %>% 
+  count() %>% 
+  valueBox(color="#FFC659")
+```
+
+### Average age (years)
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City") %>%
+  summarise(round(mean(Age),0)) %>% 
+  valueBox(color="#FFC659")
+```
+
+Row {.tabset .tabset-fade}
+----------------------------------------------------------------
+
+### Goalkeepers
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City",
+         Position == "Goalkeeper") %>% 
+  select(Citizenship, Name, Jersey) %>% 
+  pander()
+```
+
+### Defenders
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City",
+         Position == "Defender") %>% 
+  select(Citizenship, Name, Jersey) %>% 
+  pander()
+```
+
+### Midfielders
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City",
+         Position == "Midfielder") %>% 
+  select(Citizenship, Name, Jersey) %>% 
+  pander()
+```
+
+### Forwards
+
+```{r}
+players %>% 
+  filter(Team == "Manchester City",
+         Position == "Forward") %>% 
+  select(Citizenship, Name, Jersey) %>% 
+  pander()
+```
+
+
+Outcomes
+=========================================================
+
+Column
+-------------------------------------------------------
+### Home
+
+
+```{r}
+cat("Wins","[%]")
+#mci %>% 
+  #filter(Venue == "Home" & Result=="W") %>% 
+  #summarise(win.pct.h=n()*100/19) %>% 
+  gauge(73.68, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(80,100),
+                     warning =c(40,79),
+                     danger = c(0,39)))
+
+```
+
+### 
+
+```{r}
+cat("Draws","[%]")
+#mci %>% 
+  #filter(Venue == "Home" & Result=="D") %>% 
+  #summarise(draw.pct.h=n()*100/19) %>% 
+  gauge(26.31, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(80,100),
+                     warning =c(40,79),
+                     danger = c(0,39)))
+
+```
+
+### 
+
+```{r}
+cat("Losses","[%]")
+#mci %>% 
+  #filter(Venue == "Home" & Result=="L") %>% 
+  #summarise(loss.pct.h=n()*100/19) %>% 
+  gauge(0, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(0,39),
+                     warning =c(40,79),
+                     danger = c(80,100)))
+
+```
+
+Column
+-------------------------------------------------------
+### Away
+
+
+```{r}
+cat("Wins","[%]")
+#mci %>% 
+  #filter(Venue == "Away" & Result=="W") %>% 
+  #summarise(win.pct.a=n()*100/19) %>% 
+  gauge(73.68, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(80,100),
+                     warning =c(40,79),
+                     danger = c(0,39)))
+
+```
+
+### 
+
+```{r}
+cat("Draws","[%]")
+#mci %>% 
+  #filter(Venue == "Away" & Result=="D") %>% 
+  #summarise(draw.pct.a=n()*100/19) %>% 
+  gauge(10.53, min=0,max=100,symbol="%")
+
+```
+
+### 
+
+```{r}
+cat("Losses","[%]")
+#mci %>% 
+  #filter(Venue == "Away" & Result=="L") %>% 
+  #summarise(loss.pct.a=n()*100/19) %>% 
+  gauge(15.79, min=0,max=100,symbol="%",
+        gaugeSectors(success = c(0,39),
+                     warning =c(40,79),
+                     danger = c(80,100)))
+
+```
+
+Awards
+===========================================================
+
+Column
+------------------------------------------------------------
+### Goals scored
+
+```{r, fig.align="top", out.width="10%"}
+include_graphics(
+"IMG_20240908_223341.jpg")
+```
+
+### 
+```{r}
+players1 %>%
+  filter(Team == "Manchester City",
+         totalGoals >= 1) %>% 
+  select(Name, totalGoals) %>%
+  arrange(desc(totalGoals)) %>% 
+  pander()
+  
+```
+
+Column
+------------------------------------------------------------
+### Goal Assists
+
+```{r, fig.align="top", out.width="10%"}
+include_graphics(
+"IMG_20240907_140408.jpg")
+```
+
+###
+```{r}
+players1 %>%
+  filter(Team == "Manchester City",
+         goalAssists >= 1) %>% 
+  select(Name, goalAssists) %>%
+  arrange(desc(goalAssists)) %>% 
+  pander()
+  
+```
+
+
+The Etihad
+===========================================================
+
+Column 
+-----------------------------------------------------------
+### 
+
+```{r}
+include_graphics(
+"IMG_20240907_141933.jpg")
+```
+
+### 
+
+```{r, fig.align="bottom", out.width="20%"}
+include_graphics(
+"wp10675216-manchester-city-stadium-wallpapers.jpg")
+```
+
+
+Column{.tabset .tabset-fade}
+----------------------------------------------------------------------
+
+### Notes
+
+The Etihad played host to 19 Premier League home games over the 2023/24 campaign. The average match attendance stands at **55,012**.
+
+The highest attendance was recorded in **May 2024** against **West Ham** (full attendance) and the lowest at **52,143** against **Burnley** in **January 2024**.
+
+
+
+### Home matches
+
+```{r}
+mci.home<-
+  mci[mci$Venue == "Home",]%>% 
+  select(c(Date,Round,Opponent,Attendance)) %>% 
+  arrange(desc(Attendance)) %>%
+  mutate(percent =   round(Attendance*100/(55097),2))%>% 
+  datatable(filter="none",rownames=FALSE ,options=list(searching=TRUE, pagelength=5)); mci.home  
+```
+
+### Distribution
+
+```{r}
+mci.at.home<-mci[mci$Venue=="Home", ]
+mci.attendance<-ggplot(mci.at.home, aes(x=Date,y=Attendance))+
+  geom_point(shape=20, size=4, color="#6CABDD")+
+  geom_hline(aes(yintercept=round(mean(Attendance),0)))+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Time",
+       y="Attendance",
+       title="Premier League\nhome attendance: The Etihad 2023/24")+
+  theme_pander()
+
+plotly::ggplotly(p=mci.attendance)
+```
+
+
+Goals scored {data-navmenu="Offensive record"}
+======================================================================
+
+```{r , fig.width=14, fig.height=5}
+offensive1<-epl %>% 
+  group_by(Team) %>% 
+  summarise(goals_scored = sum(GF)) %>% 
+  arrange(desc(goals_scored)) %>% 
+  head(10)  
+
+GS<-ggplot(offensive1,aes(x=reorder(Team, goals_scored), y=goals_scored))+
+  geom_bar(stat='identity',fill = "#6CABDD", alpha=0.85)+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+ labs(x="Teams",
+      y="Goals scored",
+      title="Goals scored:\nPremier League 2023/2024",
+      subtitle = "Top 10")+
+  theme_pander()
+
+ggplotly(GS)
+```
+
+Column
+----------------------------------------------------------------------
+
+### Position
+
+```{r,fig.width=4}
+epl %>% 
+  group_by(Team) %>% 
+  summarise(total.goals = sum(GF)) %>%
+  arrange(desc(total.goals)) %>% 
+  mutate(position = min_rank(-total.goals)) %>% 
+  filter(Team == "ManchesterCity") %>% 
+  select(position) %>% 
+  valueBox(color="#FFC659")
+```
+
+### Goals scored
+
+```{r,fig.width=4}
+valueBox(value=sum(mci$GF),color="#FFC659")
+```
+
+
+Column
+-------------------------------------------------------------------------
+
+### Home Goals
+
+```{r, fig.width=4}
+
+valueBox(value = sum(mci.at.home$GF),color="#FFC659")
+```
+
+### Away Goals
+
+```{r, fig.width=4}
+valueBox(value=sum(mci$GF)-sum(mci.at.home$GF),color="#FFC659")
+```
+
+
+
+# Shots {data-navmenu="Offensive record"}
+
+```{r ,fig.width=14, fig.height=5}
+offensive2<-epl %>% 
+  group_by(Team) %>%
+  summarise(Shot_accuracy = sum(SoT)*100/sum(Sh)) %>% 
+  arrange(desc(Shot_accuracy)) %>% 
+  head(10) 
+
+SOT<-ggplot(offensive2 ,aes(x=reorder(Team, Shot_accuracy), y=Shot_accuracy))+
+  geom_bar(stat='identity',fill = "#6CABDD",alpha=0.85)+
+  theme_pander()+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Teams",
+       y="Percentage",
+       title="Shot accuracy [%]:\nPremier League 2023/2024",
+       subtitle = "Top 10")
+
+ggplotly(SOT)
+```
+
+Column
+----------------------------------------------------------------------
+
+### Position
+
+```{r,fig.width=4}
+epl %>% 
+  group_by(Team) %>% 
+  summarise(shot.acc = sum(SoT)*100/sum(Sh)) %>%
+  arrange(desc(shot.acc)) %>% 
+  mutate(position = min_rank(-shot.acc)) %>% 
+  filter(Team == "ManchesterCity") %>% 
+  select(position) %>%
+valueBox(color="#FFC659")
+```
+
+### Shot accuracy [%]
+
+```{r,fig.width=4}
+valueBox(value=round(sum(mci$SoT)*100/sum(mci$Sh), 2)
+, color="#FFC659")
+```
+
+
+Possession {data-navmenu="Offensive record"}
+=====================================================================
+
+```{r ,fig.width=14, fig.height=5}
+offensive3<-epl %>% 
+  group_by(Team) %>%
+  summarise(avg.poss = mean(Poss)) %>% 
+  arrange(desc(avg.poss)) %>% 
+  head(10)  
+
+POSS<-ggplot(offensive3, aes(x=reorder(Team, avg.poss), y=avg.poss))+
+  geom_bar(stat='identity',fill = "#6CABDD",alpha=0.85)+
+  theme_pander()+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Teams",
+       y="Percentage",
+       title="Average ball possession [%]:\nPremier League 2023/2024",
+       subtitle = "Top 10")
+
+ggplotly(POSS)
+```
+
+Column
+----------------------------------------------------------------------
+
+### Position
+
+```{r,fig.width=4}
+epl %>% 
+  group_by(Team) %>% 
+  summarise(avg.poss = mean(Poss)) %>%
+  arrange(desc(avg.poss)) %>% 
+  mutate(position = min_rank(-avg.poss)) %>% 
+  filter(Team == "ManchesterCity") %>% 
+  select(position) %>% 
+  valueBox(color="#FFC659")
+```
+
+### Average possesion [%]
+
+```{r,fig.width=4}
+valueBox(value=round(mean(mci$Poss), 2)
+, color="#FFC659")
+```
+
+
+Goals conceded {data-navmenu="Defensive record"}
+===========================================================
+
+```{r ,fig.width=14, fig.height=5}
+defensive1<-epl %>% 
+  group_by(Team) %>%
+  summarise(gc = sum(GA)) %>% 
+  arrange(gc) %>% 
+  head(10) 
+CONC<-ggplot(defensive1, aes(x=reorder(Team, gc), y=gc))+
+  geom_bar(stat='identity', fill = "#6CABDD",alpha=0.85)+
+  theme_pander()+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Teams",
+       y="goals",
+       title="Goals conceded:\nPremier League 2023/2024",
+       subtitle = "Top 10:Least conceded goals")
+
+ggplotly(CONC)
+```
+
+Column
+----------------------------------------------------------------------
+
+### Position
+
+```{r,fig.width=4}
+valueBox(value=2,  color="#FFC659")
+```
+
+### Goals conceded
+
+```{r,fig.width=4}
+valueBox(value=sum(mci$GA), color="#FFC659")
+```
+
+Column
+----------------------------------------------------------------------
+
+### At Home
+
+```{r, fig.width=4}
+
+valueBox(value = sum(mci.at.home$GA), 
+         color="#FFC659")
+```
+
+### Away
+
+```{r, fig.width=4}
+valueBox(value=sum(mci$GA)-sum(mci.at.home$GA), 
+         color="#FFC659")
+```
+
+
+Clean sheets {data-navmenu="Defensive record"}
+========================================================
+
+```{r,fig.width=14, fig.height=5}
+defensive2<-epl[epl$GA == 0, ] %>% 
+  group_by(Team) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  head(10)
+  
+CS<-ggplot(defensive2,aes(x=reorder(Team, n), y=n))+
+  geom_bar(stat='identity', fill = "#6CABDD",alpha=0.85)+
+  theme_pander()+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Teams",
+       y="Frequency",
+       title="Clean sheets:\nPremier League 2023/2024") 
+
+ggplotly(CS)
+```
+
+Column
+----------------------------------------------------------------------
+
+### Position
+
+```{r}
+epl[epl$GA == 0, ] %>% 
+  group_by(Team) %>% 
+  summarise(c.s = n()) %>%
+  mutate(position = min_rank(-c.s)) %>%
+  arrange(desc(c.s)) %>% 
+  filter(Team == "ManchesterCity") %>% 
+  select(position) %>%
+valueBox(color="#FFC659")
+```
+
+### Clean sheets
+
+```{r}
+mci[mci$GA==0,] %>% 
+  count() %>% 
+  valueBox(color="#FFC659")
+```
+
+Column
+----------------------------------------------------------------------
+
+### At home
+
+```{r}
+mci[mci$Venue == "Home",] %>%
+  filter(GA == 0) %>% 
+  nrow() %>%
+valueBox(color="#FFC659")
+```
+
+### Away
+
+```{r}
+# 13-6=7
+mci[mci$Venue == "Away",] %>%
+  filter(GA == 0) %>% 
+  nrow() %>%
+valueBox(color="#FFC659")
+```
+
+
+References
+============================================================
+
+- [www.kaggle.com/datasets/mertbayraktar/english-premier-league-matches-20232024-season](www.kaggle.com/datasets/mertbayraktar/english-premier-league-matches-20232024-season)
+
+- [https://pkgs.rstudio.com/flexdashboard/](https://pkgs.rstudio.com/flexdashboard/)
+
+- [https://www.excel4soccer.com/
+](https://www.excel4soccer.com/
+)
+
