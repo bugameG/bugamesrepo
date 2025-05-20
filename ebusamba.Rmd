@@ -1,0 +1,1518 @@
+---
+title: "Ebusamba School-Upper Primary (8-4-4) Exam Analysis"
+author: Bugame Gift
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 1
+    code_folding: show
+    theme:
+      bg: "#660000"
+      fg: "#FFF5EE"
+      primary: "#E9DCC9"
+      secondary: "#FFF5EE"
+      base_font:
+        google: Prompt
+      heading_font:
+        google: Proza Libre
+---
+
+```{r setup-chunk, include=FALSE}
+library(knitr)
+opts_chunk$set(message=FALSE, warning=FALSE, tidy.opts = list(width.cutoff=60))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(readxl))
+suppressPackageStartupMessages(library(ggthemes))
+suppressPackageStartupMessages(library(pander))
+suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(shinydashboard))
+
+
+# GGPLOT THEME SET
+theme_set(theme_classic())
+
+eb6 = data.frame(# class 6
+  read_csv("eb6.csv"), stringsAsFactors = TRUE)
+
+eb7 = data.frame(# class 7
+  read_csv("eb7.csv"), stringsAsFactors = TRUE)
+
+eb8 = data.frame(# class 8
+  read_csv("eb8.csv"), stringsAsFactors = TRUE)
+
+```
+
+# Introduction {.tabset .tabset-pill}
+
+This report presents the analysis of the *Solution 005* examination done by the upper primary school pupils in standards 6 to 8 in Ebusamba School in 2021. The pupils were examined on 5 subjects and subject was marked out of a possible 100 marks.
+
+# Objectives
+
+-   To describe the subject-wise performance per class
+-   To investigate for differences in stream performance per class
+
+------------------------------------------------------------------------
+
+# Subject-wise performance {.tabset .tabset-pill}
+
+The analysis begins with an overview of how the students from each class performed in the 5 subjects.
+
+## Standard 6 {.tabset .tabset-pill}
+
+### a. English {.tabset .tabset-pill}
+
+This is how Standard 6 pupils performed in English.
+
+#### Descriptive summaries
+
+```{r,english6-1, echo=FALSE,fig.align='center'}
+descriptive.eng6 = data.frame(
+  "Minimum"=round(min(eb6$eng),2),
+  "Q1"=round(quantile(eb6$eng, 0.25),2),
+  "Mean"=round(mean(eb6$eng),2),
+  "Median"=round(median(eb6$eng),2),
+  "Q3"=round(quantile(eb6$eng, 0.75),2),
+  "Maximum"=round(max(eb6$eng),2),
+  "Std.deviation"=round(sd(eb6$eng),2)
+  )
+
+descriptive.eng6 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,english6-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.eng6 = cut(eb6$eng,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.eng6)*100/nrow(eb6)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,english6-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb6, aes(x=eng))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  labs(x="score",
+       y="probability",
+       title="Standard 6",
+       subtitle="English:")+
+  geom_vline(xintercept = mean(eb6$eng))
+
+```
+
+#### Best student(s)
+
+```{r,english6-best, echo=FALSE,fig.align='center'}
+eb6[eb6$eng == max(eb6$eng),] %>% pander()
+```
+
+### b. Kiswahili {.tabset .tabset-pill}
+
+This is how Standard 6 pupils performed in Kiswahili.
+
+#### Descriptive summaries
+
+```{r,kiswahili6-1, echo=FALSE,fig.align='center'}
+descriptive.kis6 = data.frame(
+  "Minimum"=round(min(eb6$kis),2),
+  "Q1"=round(quantile(eb6$kis, probs = 0.25),2),
+  "Mean"=round(mean(eb6$kis),2),
+  "Median"=round(median(eb6$kis),2),
+  "Q3"=round(quantile(eb6$kis, probs = 0.75),2),
+  "Maximum"=round(max(eb6$kis),2),
+  "Std.deviation"=round(sd(eb6$kis),2)
+  )
+
+descriptive.kis6 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,kiswahili6-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.kis6 = cut(eb6$kis,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.kis6)*100/nrow(eb6)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,kiswahili6-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb6, aes(x=kis))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  labs(x="score",
+       y="probability",
+       title="Standard 6",
+       subtitle="Kiswahili:")+
+  geom_vline(xintercept = mean(eb6$kis))
+```
+
+#### Best student(s)
+
+```{r,kiswahili6-best, echo=FALSE,fig.align='center'}
+eb6[eb6$kis == max(eb6$kis),] %>% pander()
+```
+
+### c. Mathematics {.tabset .tabset-pill}
+
+This is how Standard 6 pupils performed in Mathematics.
+
+#### Descriptive summaries
+
+```{r,mathematics6-1, echo=FALSE,fig.align='center'}
+descriptive.math6 = data.frame(
+  "Minimum"=round(min(eb6$math),2),
+  "Q1"=round(quantile(eb6$math, probs = 0.25),2),
+  "Mean"=round(mean(eb6$math),2),
+  "Median"=round(median(eb6$math),2),
+  "Q3"=round(quantile(eb6$math, probs = 0.75),2),
+  "Maximum"=round(max(eb6$math),2),
+  "Std.deviation"=round(sd(eb6$math),2)
+  )
+
+descriptive.math6 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,mathematics6-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.math6 = cut(eb6$math,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.math6)*100/nrow(eb6)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,math6-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb6, aes(x=math))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  labs(x="score",
+       y="probability",
+       title="Standard 6",
+       subtitle="Mathematics:")+
+  geom_vline(xintercept = mean(eb6$math))
+
+```
+
+#### Best student
+
+```{r,math6-best, echo=FALSE,fig.align='center'}
+eb6[eb6$math == max(eb6$math),] %>% pander()
+```
+
+### d. Science {.tabset .tabset-pill}
+
+This is how Standard 6 pupils performed in Science.
+
+#### Descriptive summaries
+
+```{r,science6-1, echo=FALSE,fig.align='center'}
+descriptive.sci6 = data.frame(
+  "Minimum"=round(min(eb6$sci),2),
+  "Q1"=round(quantile(eb6$sci, probs = 0.25),2),
+  "Mean"=round(mean(eb6$sci),2),
+  "Median"=round(median(eb6$sci),2),
+  "Q3"=round(quantile(eb6$sci, probs = 0.75),2),
+  "Maximum"=round(max(eb6$sci),2),
+  "Std.deviation"=round(sd(eb6$sci),2)
+  )
+
+descriptive.sci6 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,science6-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.sci6 = cut(eb6$sci,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.sci6)*100/nrow(eb6)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,science6-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb6, aes(x=sci))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  labs(x="score",
+       y="probability",
+       title="Standard 6",
+       subtitle="Science:")+
+  geom_vline(xintercept = mean(eb6$sci))
+```
+
+#### Best student
+
+```{r,science6-best, echo=FALSE,fig.align='center'}
+eb6[eb6$sci == max(eb6$sci),] %>% pander()
+```
+
+### e. SSRE {.tabset .tabset-pill}
+
+This is how Standard 6 pupils performed in SSRE.
+
+#### Descriptive summaries
+
+```{r,ssre6-1, echo=FALSE,fig.align='center'}
+descriptive.ssre6 = data.frame(
+  "Minimum"=round(min(eb6$ssre),2),
+  "Q1"=round(quantile(eb6$ssre, probs = 0.25),2),
+  "Mean"=round(mean(eb6$ssre),2),
+  "Median"=round(median(eb6$ssre),2),
+  "Q3"=round(quantile(eb6$ssre, probs = 0.75),2),
+  "Maximum"=round(max(eb6$ssre),2),
+  "Std.deviation"=round(sd(eb6$ssre),2)
+  )
+
+descriptive.ssre6 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,ssre6-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.ssre6 = cut(eb6$ssre,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.ssre6)*100/nrow(eb6)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,SSRE6-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb6, aes(x=ssre))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  labs(x="score",
+       y="probability",
+       title="Standard 6",
+       subtitle="SSRE:")+
+  geom_vline(xintercept = mean(eb6$ssre))
+```
+
+#### Best student
+
+```{r,SSRE6-best, echo=FALSE,fig.align='center'}
+eb6[eb6$ssre == max(eb6$ssre),] %>% pander()
+```
+
+### f. Total {.tabset .tabset-pill}
+
+This is how Standard 6 pupils performed overally.
+
+#### Descriptive summaries
+
+```{r,total6-1, echo=FALSE,fig.align='center'}
+descriptive.total6 = data.frame(
+  "Minimum"=round(min(eb6$total),2),
+  "Q1"=round(quantile(eb6$total, probs = 0.25),2),
+  "Mean"=round(mean(eb6$total),2),
+  "Median"=round(median(eb6$total),2),
+  "Q3"=round(quantile(eb6$total, probs = 0.75),2),
+  "Maximum"=round(max(eb6$total),2),
+  "Std.deviation"=round(sd(eb6$total),2)
+  )
+
+descriptive.total6 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,total6-2, echo=FALSE, fig.align='center'}
+total.custom.breaks <-c(0,100,200,300,400,500) 
+total.custom.labels <-c("0-100","101-200","201-300","301-400","401-500")
+
+cut.total6 = cut(eb6$total,
+                 breaks=total.custom.breaks, 
+                 labels=total.custom.labels)
+
+ceiling(table(cut.total6)*100/nrow(eb6)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,total6-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb6, aes(x=total))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  labs(x="score",
+       y="probability",
+       title="Standard 6",
+       subtitle="Total:")+
+  geom_vline(xintercept = mean(eb6$total))
+
+```
+
+#### Best student
+
+```{r,total6-best, echo=FALSE,fig.align='center'}
+eb6[eb6$total == max(eb6$total),] %>% pander()
+```
+
+## Standard 7 {.tabset .tabset-pill}
+
+### a. English {.tabset .tabset-pill}
+
+This is how Standard 7 pupils performed in English.
+
+#### Descriptive summaries
+
+```{r,english7-1, echo=FALSE,fig.align='center'}
+descriptive.eng7 = data.frame(
+  "Minimum"=round(min(eb7$eng),2),
+  "Q1"=round(quantile(eb7$eng, 0.25),2),
+  "Mean"=round(mean(eb7$eng),2),
+  "Median"=round(median(eb7$eng),2),
+  "Q3"=round(quantile(eb7$eng, 0.75),2),
+  "Maximum"=round(max(eb7$eng),2),
+  "Std.deviation"=round(sd(eb7$eng),2)
+  )
+
+descriptive.eng7 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,english7-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.eng7 = cut(eb7$eng,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.eng7)*100/nrow(eb7)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,english7-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb7, aes(x=eng))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  labs(x="score",
+       y="probability",
+       title="Standard 7",
+       subtitle="English:")+
+  geom_vline(xintercept = mean(eb7$eng))
+
+```
+
+#### Best student(s)
+
+```{r,english7-best, echo=FALSE,fig.align='center'}
+eb7[eb7$eng == max(eb7$eng),] %>% pander()
+```
+
+### b. Kiswahili {.tabset .tabset-pill}
+
+This is how Standard 7 pupils performed in Kiswahili.
+
+#### Descriptive summaries
+
+```{r,kiswahili7-1, echo=FALSE,fig.align='center'}
+descriptive.kis7 = data.frame(
+  "Minimum"=round(min(eb7$kis),2),
+  "Q1"=round(quantile(eb7$kis, probs = 0.25),2),
+  "Mean"=round(mean(eb7$kis),2),
+  "Median"=round(median(eb7$kis),2),
+  "Q3"=round(quantile(eb7$kis, probs = 0.75),2),
+  "Maximum"=round(max(eb7$kis),2),
+  "Std.deviation"=round(sd(eb7$kis),2)
+  )
+
+descriptive.kis7 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,kiswahili7-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.kis7 = cut(eb7$kis,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.kis7)*100/nrow(eb7)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,kiswahili7-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb7, aes(x=kis))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  labs(x="score",
+       y="probability",
+       title="Standard 7",
+       subtitle="Kiswahili:")+
+  geom_vline(xintercept = mean(eb7$kis))
+
+```
+
+#### Best student(s)
+
+```{r,kiswahili7-best, echo=FALSE,fig.align='center'}
+eb7[eb7$kis == max(eb7$kis),] %>% pander()
+```
+
+### c. Mathematics {.tabset .tabset-pill}
+
+This is how Standard 7 pupils performed in Mathematics.
+
+#### Descriptive summaries
+
+```{r,mathematics7-1, echo=FALSE,fig.align='center'}
+descriptive.math7 = data.frame(
+  "Minimum"=round(min(eb7$math),2),
+  "Q1"=round(quantile(eb7$math, probs = 0.25),2),
+  "Mean"=round(mean(eb7$math),2),
+  "Median"=round(median(eb7$math),2),
+  "Q3"=round(quantile(eb7$math, probs = 0.75),2),
+  "Maximum"=round(max(eb7$math),2),
+  "Std.deviation"=round(sd(eb7$math),2)
+  )
+
+descriptive.math7 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,mathematics7-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.math7 = cut(eb7$math,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.math7)*100/nrow(eb7)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,math7-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb7, aes(x=math))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  labs(x="score",
+       y="probability",
+       title="Standard 7",
+       subtitle="Mathematics:")+
+  geom_vline(xintercept = mean(eb7$math))
+
+```
+
+#### Best student(s)
+
+```{r,math7-best, echo=FALSE,fig.align='center'}
+eb7[eb7$math == max(eb7$math),] %>% pander()
+```
+
+### d. Science {.tabset .tabset-pill}
+
+This is how Standard 7 pupils performed in Science.
+
+#### Descriptive summaries
+
+```{r,science7-1, echo=FALSE,fig.align='center'}
+descriptive.sci7 = data.frame(
+  "Minimum"=round(min(eb7$sci),2),
+  "Q1"=round(quantile(eb7$sci, probs = 0.25),2),
+  "Mean"=round(mean(eb7$sci),2),
+  "Median"=round(median(eb7$sci),2),
+  "Q3"=round(quantile(eb7$sci, probs = 0.75),2),
+  "Maximum"=round(max(eb7$sci),2),
+  "Std.deviation"=round(sd(eb7$sci),2)
+  )
+
+descriptive.sci7 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,science7-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.sci7 = cut(eb7$sci,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.sci7)*100/nrow(eb7)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,science7-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb7, aes(x=sci))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  labs(x="score",
+       y="probability",
+       title="Standard 7",
+       subtitle="Science:")+
+  geom_vline(xintercept = mean(eb7$sci))
+
+```
+
+#### Best student(s)
+
+```{r,science7-best, echo=FALSE,fig.align='center'}
+eb7[eb7$sci == max(eb7$sci),] %>% pander()
+```
+
+### e. SSRE {.tabset .tabset-pill}
+
+This is how Standard 7 pupils performed in SSRE.
+
+#### Descriptive summaries
+
+```{r,ssre7-1, echo=FALSE,fig.align='center'}
+descriptive.ssre7 = data.frame(
+  "Minimum"=round(min(eb7$ssre),2),
+  "Q1"=round(quantile(eb7$ssre, probs = 0.25),2),
+  "Mean"=round(mean(eb7$ssre),2),
+  "Median"=round(median(eb7$ssre),2),
+  "Q3"=round(quantile(eb7$ssre, probs = 0.75),2),
+  "Maximum"=round(max(eb7$ssre),2),
+  "Std.deviation"=round(sd(eb7$ssre),2)
+  )
+
+descriptive.ssre7 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,ssre7-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.ssre7 = cut(eb7$ssre,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.ssre7)*100/nrow(eb7)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,ssre7-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb7, aes(x=ssre))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  labs(x="score",
+       y="probability",
+       title="Standard 7",
+       subtitle="SSRE:")+
+  geom_vline(xintercept = mean(eb7$ssre))
+
+```
+
+#### Best student(s)
+
+```{r,ssre7-best, echo=FALSE,fig.align='center'}
+eb7[eb7$ssre == max(eb7$ssre),] %>% pander()
+```
+
+### f. Total {.tabset .tabset-pill}
+
+This is how Standard 7 pupils performed overally.
+
+#### Descriptive summaries
+
+```{r,total7-1, echo=FALSE,fig.align='center'}
+descriptive.total7 = data.frame(
+  "Minimum"=round(min(eb7$total),2),
+  "Q1"=round(quantile(eb7$total, probs = 0.25),2),
+  "Mean"=round(mean(eb7$total),2),
+  "Median"=round(median(eb7$total),2),
+  "Q3"=round(quantile(eb7$total, probs = 0.75),2),
+  "Maximum"=round(max(eb7$total),2),
+  "Std.deviation"=round(sd(eb7$total),2)
+  )
+
+descriptive.total7 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,total7-2, echo=FALSE, fig.align='center'}
+total.custom.breaks <-c(0,100,200,300,400,500) 
+total.custom.labels <-c("0-100","101-200","201-300","301-400","401-500")
+
+cut.total7 = cut(eb7$total,
+                 breaks=total.custom.breaks, 
+                 labels=total.custom.labels)
+
+ceiling(table(cut.total7)*100/nrow(eb7)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,total7-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb7, aes(x=total))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  labs(x="score",
+       y="probability",
+       title="Standard 7",
+       subtitle="Total:")+
+  geom_vline(xintercept = mean(eb7$total))
+
+```
+
+#### Best student(s)
+
+```{r,total7-best, echo=FALSE,fig.align='center'}
+eb7[eb7$total == max(eb7$total),] %>% pander()
+```
+
+## Standard 8 {.tabset .tabset-pill}
+
+### a. English {.tabset .tabset-pill}
+
+This is how Standard 8 pupils performed in English.
+
+#### Descriptive summaries
+
+```{r,english8-1, echo=FALSE,fig.align='center'}
+descriptive.eng8 = data.frame(
+  "Minimum"=round(min(eb8$eng),2),
+  "Q1"=round(quantile(eb8$eng, 0.25),2),
+  "Mean"=round(mean(eb8$eng),2),
+  "Median"=round(median(eb8$eng),2),
+  "Q3"=round(quantile(eb8$eng, 0.75),2),
+  "Maximum"=round(max(eb8$eng),2),
+  "Std.deviation"=round(sd(eb8$eng),2)
+  )
+
+descriptive.eng8 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,english8-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.eng8 = cut(eb8$eng,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.eng8)*100/nrow(eb8)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,english8-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb8, aes(x=eng))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  labs(x="score",
+       y="probability",
+       title="Standard 8",
+       subtitle="English:")+
+  geom_vline(xintercept = mean(eb8$eng))
+
+```
+
+#### Best student(s)
+
+```{r,eng8-best, echo=FALSE,fig.align='center'}
+eb8[eb8$eng == max(eb8$eng),] %>% pander()
+```
+
+### b. Kiswahili {.tabset .tabset-pill}
+
+This is how Standard 8 pupils performed in Kiswahili.
+
+#### Descriptive summaries
+
+```{r,kiswahili8-1, echo=FALSE,fig.align='center'}
+descriptive.kis8 = data.frame(
+  "Minimum"=round(min(eb8$kis),2),
+  "Q1"=round(quantile(eb8$kis, probs = 0.25),2),
+  "Mean"=round(mean(eb8$kis),2),
+  "Median"=round(median(eb8$kis),2),
+  "Q3"=round(quantile(eb8$kis, probs = 0.75),2),
+  "Maximum"=round(max(eb8$kis),2),
+  "Std.deviation"=round(sd(eb8$kis),2)
+  )
+
+descriptive.kis8 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,kiswahili8-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.kis8 = cut(eb8$kis,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.kis8)*100/nrow(eb8)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,kiswahili8-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb8, aes(x=kis))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  labs(x="score",
+       y="probability",
+       title="Standard 8",
+       subtitle="Kiswahili:")+
+  geom_vline(xintercept = mean(eb8$kis))
+
+```
+
+#### Best student(s)
+
+```{r,kiswahili8-best, echo=FALSE,fig.align='center'}
+eb8[eb8$kis == max(eb8$kis),] %>% pander()
+```
+
+### c. Mathematics {.tabset .tabset-pill}
+
+This is how Standard 8 pupils performed in Mathematics.
+
+#### Descriptive summaries
+
+```{r,mathematics8-1, echo=FALSE,fig.align='center'}
+descriptive.math8 = data.frame(
+  "Minimum"=round(min(eb8$math),2),
+  "Q1"=round(quantile(eb8$math, probs = 0.25),2),
+  "Mean"=round(mean(eb8$math),2),
+  "Median"=round(median(eb8$math),2),
+  "Q3"=round(quantile(eb8$math, probs = 0.75),2),
+  "Maximum"=round(max(eb8$math),2),
+  "Std.deviation"=round(sd(eb8$math),2)
+  )
+
+descriptive.math8 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,mathematics8-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.math8 = cut(eb8$math,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.math8)*100/nrow(eb8)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,math8-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb8, aes(x=math))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  labs(x="score",
+       y="probability",
+       title="Standard 8",
+       subtitle="Mathematics:")+
+  geom_vline(xintercept = mean(eb8$math))
+
+```
+
+#### Best student(s)
+
+```{r,math8-best, echo=FALSE,fig.align='center'}
+eb8[eb8$math == max(eb8$math),] %>% pander()
+```
+
+### d. Science {.tabset .tabset-pill}
+
+This is how Standard 8 pupils performed in Science.
+
+#### Descriptive summaries
+
+```{r,science8-1, echo=FALSE,fig.align='center'}
+descriptive.sci8 = data.frame(
+  "Minimum"=round(min(eb8$sci),2),
+  "Q1"=round(quantile(eb8$sci, probs = 0.25),2),
+  "Mean"=round(mean(eb8$sci),2),
+  "Median"=round(median(eb8$sci),2),
+  "Q3"=round(quantile(eb8$sci, probs = 0.75),2),
+  "Maximum"=round(max(eb8$sci),2),
+  "Std.deviation"=round(sd(eb8$sci),2)
+  )
+
+descriptive.sci8 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,science8-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.sci8 = cut(eb8$sci,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.sci8)*100/nrow(eb8)) %>% pander()
+  
+```
+
+#### Density function
+
+```{r,science8-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb8, aes(x=sci))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  labs(x="score",
+       y="probability",
+       title="Standard 8",
+       subtitle="Science:")+
+  geom_vline(xintercept = mean(eb8$sci))
+
+```
+
+#### Best student(s)
+
+```{r,science8-best, echo=FALSE,fig.align='center'}
+eb8[eb8$sci == max(eb8$sci),] %>% pander()
+```
+
+### e. SSRE {.tabset .tabset-pill}
+
+This is how Standard 8 pupils performed in SSRE.
+
+#### Descriptive summaries
+
+```{r,ssre8-1, echo=FALSE,fig.align='center'}
+descriptive.ssre8 = data.frame(
+  "Minimum"=round(min(eb8$ssre),2),
+  "Q1"=round(quantile(eb8$ssre, probs = 0.25),2),
+  "Mean"=round(mean(eb8$ssre),2),
+  "Median"=round(median(eb8$ssre),2),
+  "Q3"=round(quantile(eb8$ssre, probs = 0.75),2),
+  "Maximum"=round(max(eb8$ssre),2),
+  "Std.deviation"=round(sd(eb8$ssre),2)
+  )
+
+descriptive.ssre8 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,ssre8-2, echo=FALSE, fig.align='center'}
+custom.breaks = c(0,10,20,30,40,50,60,70,80,90,100)
+custom.labels = c("0-10","11-20","21-30","31-40","41-50",
+                "51-60","61-70","71-80","81-90","91-100")
+
+cut.ssre8 = cut(eb8$ssre,
+                 breaks=custom.breaks, 
+                 labels=custom.labels)
+
+ceiling(table(cut.ssre8)*100/nrow(eb8)) %>% pander()
+```
+
+#### Density function
+
+```{r,ssre8-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb8, aes(x=ssre))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  labs(x="score",
+       y="probability",
+       title="Standard 8",
+       subtitle="SSRE:")+
+  geom_vline(xintercept = mean(eb8$ssre))
+
+```
+
+#### Best student(s)
+
+```{r,ssre8-best, echo=FALSE,fig.align='center'}
+eb8[eb8$ssre == max(eb8$ssre),] %>% pander()
+```
+
+### f. Total {.tabset .tabset-pill}
+
+This is how Standard 8 pupils performed overally.
+
+#### Descriptive summaries
+
+```{r,total8-1, echo=FALSE,fig.align='center'}
+descriptive.total8 = data.frame(
+  "Minimum"=round(min(eb8$total),2),
+  "Q1"=round(quantile(eb8$total, probs = 0.25),2),
+  "Mean"=round(mean(eb8$total),2),
+  "Median"=round(median(eb8$total),2),
+  "Q3"=round(quantile(eb8$total, probs = 0.75),2),
+  "Maximum"=round(max(eb8$total),2),
+  "Std.deviation"=round(sd(eb8$total),2)
+  )
+
+descriptive.total8 %>% pander()
+```
+
+#### Score distribution
+
+The table below represents the score distribution in percentage.
+
+```{r,total8-2, echo=FALSE, fig.align='center'}
+total.custom.breaks <-c(0,100,200,300,400,500) 
+total.custom.labels <-c("0-100","101-200","201-300","301-400","401-500")
+
+cut.total8 = cut(eb8$total,
+                 breaks=total.custom.breaks, 
+                 labels=total.custom.labels)
+
+ceiling(table(cut.total8)*100/nrow(eb8)) %>% pander()
+```
+
+#### Density function
+
+```{r,total8-density, echo=FALSE,fig.align='center'}
+
+ggplot(eb8, aes(x=total))+
+  geom_density(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  labs(x="score",
+       y="probability",
+       title="Standard 8",
+       subtitle="Total:")+
+  geom_vline(xintercept = mean(eb8$total))
+
+```
+
+#### Best student(s)
+
+```{r,total8-best, echo=FALSE,fig.align='center'}
+eb8[eb8$total == max(eb8$total),] %>% pander()
+```
+
+# Stream performance
+
+Ebusamba Primary School has double streamed classes namely, *B* and *G*. This section looks to identify existing differences between subject performances between these two streams for the 3 classes. To do that, there is need to formulate research hypotheses and conduct tests that will not only help us identify differences but also signify them. First, we assume the following:
+
+-   The pupils' exam scores from both streams and for all subjects are independent
+-   The exam scores are normally distributed with respective means per stream and equal variances.
+
+Given the above assumptions put in place, we shall use the ANOVA tests to investigate for performance differences. We set the level of significance to *5%*
+
+## Research hypothesis {.tabset .tabset-pill}
+
+> H0 = *There is no difference in subject performance between stream B and G*
+
+### Standard 6 {.tabset .tabset-pill}
+
+#### a. English
+
+```{r,english6-aov, echo=FALSE}
+aov.eng6=aov(data = eb6, formula = eng~strm)
+aov.eng6 %>% summary() %>% pander()
+```
+
+Since p-value \> 0.05, we fail to reject the null hypothesis in favor of the initial claim that there is no difference in performance between stream B and G in English.
+
+##### Boxplot
+
+```{r, english6-box, echo=FALSE}
+box.eng6=ggplot(data = eb6, aes(x=factor(strm), y=eng))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.eng6) %>% config(displayModeBar = FALSE)
+```
+
+#### b. Kiswahili
+
+```{r,kiswahili6-aov, echo=FALSE}
+aov.kis6=aov(data = eb6, formula = kis~strm)
+aov.kis6 %>% summary() %>% pander()
+```
+
+The obtained p-value \< 0.05. In conclusion, we reject the research hypothesis and hence report a statistical significance in performance between stream B and G in Kiswahili.
+
+##### Boxplot
+
+```{r, kiswahili6-box, echo=FALSE}
+box.kis6=ggplot(data = eb6, aes(x=factor(strm), y=kis))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.kis6) %>% config(displayModeBar = FALSE)
+```
+
+#### c. Mathematics
+
+```{r,math6-aov, echo=FALSE}
+aov.math6=aov(data = eb6, formula = math~strm)
+aov.math6 %>% summary() %>% pander()
+```
+
+The obtained p-value \< 0.05. We reject the research hypothesis and report a statistical significance in performance between stream B and G in Mathematics.
+
+##### Boxplot
+
+```{r, math6-box, echo=FALSE}
+box.math6=ggplot(data = eb6, aes(x=factor(strm), y=math))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.math6) %>% config(displayModeBar = FALSE)
+```
+
+#### d. Science
+
+```{r,science6-aov, echo=FALSE}
+aov.sci6=aov(data = eb6, formula = sci~strm)
+aov.sci6 %>% summary() %>% pander()
+```
+
+The obtained p-value \< 0.05. We reject the research hypothesis and report a statistical significance in performance between stream B and G in Science.
+
+##### Boxplot
+
+```{r, science6-box, echo=FALSE}
+box.sci6=ggplot(data = eb6, aes(x=factor(strm), y=sci))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.sci6) %>% config(displayModeBar = FALSE)
+```
+
+#### e. SSRE
+
+```{r,ssre6-aov, echo=FALSE}
+aov.ssre6=aov(data = eb6, formula = ssre~strm)
+aov.ssre6 %>% summary() %>% pander()
+```
+
+The p-value \> 0.05. We fail to reject the null hypothesis. In conclusion, there is no difference in performance between stream B and G in SSRE.
+
+##### Boxplot
+
+```{r, ssre6-box, echo=FALSE}
+box.ssre6=ggplot(data = eb6, aes(x=factor(strm), y=ssre))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.ssre6) %>% config(displayModeBar = FALSE)
+```
+
+#### f. Total
+
+```{r,total6-aov, echo=FALSE}
+aov.total6=aov(data = eb6, formula = total~strm)
+aov.total6 %>% summary() %>% pander()
+```
+
+The obtained p-value \< 0.05. We reject the null hypothesis and report a statistical significance in the overall performance between stream B and G.
+
+##### Boxplot
+
+```{r, total6-box, echo=FALSE}
+box.total6=ggplot(data = eb6, aes(x=factor(strm), y=total))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.5)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.total6) %>% config(displayModeBar = FALSE)
+```
+
+### Standard 7 {.tabset .tabset-pill}
+
+#### a. English
+
+```{r,eng7-aov, echo=FALSE}
+aov.eng7=aov(data = eb7, formula = eng~strm)
+aov.eng7 %>% summary() %>% pander()
+```
+
+Since p-value \< 0.05, we reject the null hypothesis in favor of the alternative hypothesis that there is a difference in performance between stream B and G in English.
+
+##### Boxplot
+
+```{r, english7-box, echo=FALSE}
+box.eng7=ggplot(data = eb7, aes(x=factor(strm), y=eng))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.eng7) %>% config(displayModeBar = FALSE)
+```
+
+#### b. Kiswahili
+
+```{r,kis7-aov, echo=FALSE}
+aov.kis7=aov(data = eb7, formula = kis~strm)
+aov.kis7 %>% summary() %>% pander()
+```
+
+Since p-value \> 0.05, we fail to reject the null hypothesis in favor of the initial claim that there is no difference in performance between stream B and G in Kiswahili.
+
+##### Boxplot
+
+```{r, kiswahili7-box, echo=FALSE}
+box.kis7=ggplot(data = eb7, aes(x=factor(strm), y=kis))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.kis7) %>% config(displayModeBar = FALSE)
+```
+
+#### c. Mathematics
+
+```{r,math7-aov, echo=FALSE}
+aov.math7=aov(data = eb7, formula = math~strm)
+aov.math7 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis. We conclude a statistical insignificance in the subject performance of Mathematics between stream B and G.
+
+##### Boxplot
+
+```{r, math7-box, echo=FALSE}
+box.math7=ggplot(data = eb7, aes(x=factor(strm), y=math))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.math7) %>% config(displayModeBar = FALSE)
+```
+
+#### d. Science
+
+```{r, science7-aov, echo=FALSE}
+aov.sci7=aov(data = eb7, formula = sci~strm)
+aov.sci7 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis. We conclude a statistical insignificance in the subject performance of Science between stream B and G.
+
+##### Boxplot
+
+```{r, science7-box, echo=FALSE}
+box.sci7=ggplot(data = eb7, aes(x=factor(strm), y=sci))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.sci7) %>% config(displayModeBar = FALSE)
+```
+
+#### e. SSRE
+
+```{r, ssre7-aov, echo=FALSE}
+aov.ssre7=aov(data = eb7, formula = ssre~strm)
+aov.ssre7 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis. We conclude a statistical insignificance in the subject performance of SSRE between stream B and G.
+
+##### Boxplot
+
+```{r, ssre7-box, echo=FALSE}
+box.ssre7=ggplot(data = eb7, aes(x=factor(strm), y=ssre))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.ssre7) %>% config(displayModeBar = FALSE)
+```
+
+#### f. Total
+
+```{r, total7-aov, echo=FALSE}
+aov.total7=aov(data = eb7, formula = total~strm)
+aov.total7 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis. In conclusion, there is no difference in the overall performance between the 2 streams.
+
+##### Boxplot
+
+```{r, total7-box, echo=FALSE}
+box.total7=ggplot(data = eb7, aes(x=factor(strm), y=total))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.7)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.total7) %>% config(displayModeBar = FALSE)
+```
+
+### Standard 8 {.tabset .tabset-pill}
+
+#### a. English
+
+```{r, eng8-aov, echo=FALSE}
+aov.eng8=aov(data = eb8, formula = eng~strm)
+aov.eng8 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the null hypothesis. In conclusion, there is no difference in the subject performance of English between stream B and G.
+
+##### Boxplot
+
+```{r, eng8-box, echo=FALSE}
+box.eng8=ggplot(data = eb8, aes(x=factor(strm), y=eng))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.eng8) %>% config(displayModeBar = FALSE)
+```
+
+#### b. Kiswahili
+
+```{r, kis8-aov, echo=FALSE}
+aov.kis8=aov(data = eb8, formula = kis~strm)
+aov.kis8 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis. In conclusion, there is no difference in the Kiswahili subject performance between the 2 streams.
+
+##### Boxplot
+
+```{r, kis8-box, echo=FALSE}
+box.kis8=ggplot(data = eb8, aes(x=factor(strm), y=kis))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.kis8) %>% config(displayModeBar = FALSE)
+```
+
+#### c. Mathematics
+
+```{r, math8-aov, echo=FALSE}
+aov.math8=aov(data = eb8, formula = math~strm)
+aov.math8 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis.There is no difference in the performance of Mathematics between the stream B and G.
+
+##### Boxplot
+
+```{r, math8-box, echo=FALSE}
+box.math8=ggplot(data = eb8, aes(x=factor(strm), y=math))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.math8) %>% config(displayModeBar = FALSE)
+```
+
+#### d. Science
+
+```{r, science8-aov, echo=FALSE}
+aov.sci8=aov(data = eb8, formula = sci~strm)
+aov.sci8 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis. In conclusion, there is no difference in the Science subject performance between the 2 streams.
+
+##### Boxplot
+
+```{r, science8-box, echo=FALSE}
+box.sci8=ggplot(data = eb8, aes(x=factor(strm), y=sci))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.sci8) %>% config(displayModeBar = FALSE)
+```
+
+#### e. SSRE
+
+```{r, ssre8-aov, echo=FALSE}
+aov.ssre8=aov(data = eb8, formula = ssre~strm)
+aov.ssre8 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis. In conclusion, there is no difference in the SSRE subject performance between the 2 streams.
+
+##### Boxplot
+
+```{r, ssre8-box, echo=FALSE}
+box.ssre8=ggplot(data = eb8, aes(x=factor(strm), y=ssre))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.ssre8) %>% config(displayModeBar = FALSE)
+```
+
+#### f. Total
+
+```{r, total8-aov, echo=FALSE}
+aov.total8=aov(data = eb8, formula = total~strm)
+aov.total8 %>% summary() %>% pander()
+```
+
+The obtained p-value \> 0.05. We fail to reject the research hypothesis. In conclusion, there is no difference in the overall performance between stream B and G.
+
+##### Boxplot
+
+```{r, total8-box, echo=FALSE}
+box.total8=ggplot(data = eb8, aes(x=factor(strm), y=total))+
+  geom_boxplot(fill = "darkorange", col= "darkorange4", alpha = 0.9)+
+  stat_summary(fun.y = "mean", geom = "point", shape = 23, size = 2.5, fill = "darkorange", col = "darkorange4")+
+  labs(x = "streams", y = "score")
+
+ggplotly(box.total8) %>% config(displayModeBar = FALSE)
+```
+
+# Findings {.tabset .tabset-pill}
+
+## Standard 6 {.tabset .tabset-pill}
+
+-   The candidates recorded the highest variation in Kiswahili and Science (sd = 14.27)
+
+-   Mathematics had the least variation (sd = 8.88)
+
+-   Mathematics was the least performed subject (mean = 27.26)
+
+-   Kiswahili is the best performed subject (mean = 46.27)
+
+-   A majority of the standard 6 candidates scored an overall of 101-200 marks (71%)
+
+-   Subject performance between the two streams was significantly different in Kiswahili, Mathematics and Science.
+
+-   Overall performance between the two streams was also significant.
+
+-   All the best students per subject emerge from the B stream.
+
+## Standard 7 {.tabset .tabset-pill}
+
+-   The candidates recorded the highest variation in Science (sd = 13.25)
+
+-   SSRE had the least variation (sd = 10.83)
+
+-   Mathematics was the least performed subject (mean = 34.30)
+
+-   Science was the best performed subject (mean = 45.41)
+
+-   Numerous standard 7 candidates scored an overall of 101-200 marks (60%)
+
+-   Subject performance between the two streams was insignificantly different for all the subjects.
+
+## Standard 8 {.tabset .tabset-pill}
+
+-   The candidates recorded the highest variation in Science (sd = 12.51)
+
+-   The least variation was recorded in Kiswahili (sd = 9.71)
+
+-   Mathematics was the least performed subject (mean = 32.10)
+
+-   English was the best performed subject (mean = 46.54)
+
+-   Multiple standard 8 candidates scored an overall of 201-300 marks (54%)
+
+-   Subject performance between the two streams was insignificantly different for all the subjects.
+
+# Recommendation
+
+-   Science teachers should come up with common strategies for disseminating knowledge to the learners in order to kurb variation in the subject performance across the three classes.
+
+-   Introduce Mathematical discussion groups amongst the candidates in each stream.
+
+-   Reward top performers to enhance healthy academic competition with other learners.
