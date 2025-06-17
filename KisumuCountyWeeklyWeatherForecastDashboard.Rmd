@@ -1,0 +1,681 @@
+---
+title: "Kisumu County Weekly Weather Forecast:"
+output: 
+  flexdashboard::flex_dashboard:
+    social: [linkedin, twitter]
+    theme: spacelab
+runtime: shiny 
+favicon: CRS.png
+---
+
+```{r ,setup-chunk, include=FALSE}
+library(knitr)
+opts_chunk$set(message=FALSE, warning=FALSE, tidy.opts = list(width.cutoff=60))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(shiny))
+suppressPackageStartupMessages(library(flexdashboard))
+suppressPackageStartupMessages(library(shinydashboard))
+suppressPackageStartupMessages(library(shinycssloaders))
+suppressPackageStartupMessages(library(pander))
+suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(rsconnect))
+suppressPackageStartupMessages(library(pander))
+suppressPackageStartupMessages(library(ggthemes))
+suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(gcookbook))
+suppressPackageStartupMessages(library(dygraphs))
+suppressPackageStartupMessages(library(readxl))
+```
+
+
+```{r, loading-data-cleaning-data}
+# Central/Lakeshore & Maseno/Kajulu zones
+z1 <- read_excel("WeeklyForecastDataset2.xlsx", sheet = 1)
+
+# Eastern Climatic zone
+z2 <- read_excel("WeeklyForecastDataset2.xlsx", sheet = 2)
+
+# Date vector
+z1$date <- ymd(z1$date)
+z2$date <- ymd(z2$date)
+
+
+#  Factorization
+# 1. morning
+z1$Morning <- factor(z1$Morning)
+z2$Morning <- factor(z2$Morning)
+
+# 2. afternoon
+z1$Afternoon <- factor(z1$Afternoon)
+z2$Afternoon <- factor(z2$Afternoon)
+
+
+# 3. Night
+z1$Night <- factor(z1$Night) 
+z2$Night <- factor(z2$Night)
+
+
+# 4. Rainfall distribution
+z1$Distribution <- factor(z1$Distribution)
+z2$Distribution <- factor(z2$Distribution)
+
+### RAIN MODELS-Data to be used in the Modelling page
+# Non-rainy days
+no.rain.z1 = z1[!is.na(z1$MinT),] %>%
+  filter(Distribution %in% c(NA)) %>%
+  mutate(Rain = 0) # 115
+no.rain.z2 = z2[!is.na(z2$MinT),] %>%
+  filter(Distribution %in% c(NA)) %>%
+  mutate(Rain = 0) # 111
+
+# Rainy days
+yes.rain.z1 = z1[!is.na(z1$MinT),] %>%
+  filter(Distribution == "Few places" | Distribution == "Many places" | Distribution == "Most places") %>%
+  mutate(Rain = 1)  # 277  
+yes.rain.z2 = z2[!is.na(z2$MinT),] %>%
+  filter(Distribution == "Few places" | Distribution == "Many places" | Distribution == "Most places") %>%
+  mutate(Rain = 1)  # 281
+
+z1.model = merge(no.rain.z1, yes.rain.z1, all=T) 
+z2.model = merge(no.rain.z2, yes.rain.z2, all=T)
+
+
+#   RAIN MODELS BASED ON 
+##  minimum and maximum temperatures
+# Zone 1 model
+z1.rain.model=glm(data=z1.model, 
+          formula=Rain~MinT+MaxT,
+          family = "binomial")
+
+# Zone 2 model
+z2.rain.model=glm(data=z2.model, 
+                  formula=Rain~MinT+MaxT,
+                  family = "binomial")
+
+
+```
+
+
+
+{.sidebar data-width=350}
+===============================================================================
+
+The Kisumu County Weather Forecast App.
+Keeping track of the weather is our top-priority.
+
+
+**Input Panel**
+
+```{r, input-parameters}
+# Date parameters
+dateInput(inputId = "formerdate", label = "Enter initial date",
+          value = "2023-07-11", min = "2020-01-01", max = "2024-12-31",
+          format = "yyyy-mm-dd")
+dateInput(inputId = "latterdate", label = "Enter latter date",
+          value = "2023-07-17", min = "2020-01-01", max = "2024-12-31",
+          format = "yyyy-mm-dd")
+
+# Action button
+actionButton("act", label = "Refresh")
+br()
+br()
+```
+
+
+
+
+**Central/Lakeshore & Maseno/Kajulu zones**
+```{r}
+# Model inputs
+sliderInput("slidemaxzone1", label = "Maximum Temperature",
+             value = 29, min = 25, max = 35, step = 0.1)
+
+sliderInput("slideminzone1", label = "Minimum Temperature",
+             value = 19, min = 15, max = 25, step = 0.1)
+```
+
+
+
+```{r, PredictionButton-2}
+# Action button 2
+actionButton("act2", label = "Predict")
+br()
+br()
+```
+
+
+
+**Eastern zone**
+```{r}
+sliderInput("slidemaxzone2", label = "Maximum Temperature",
+             value = 28, min = 25, max = 35, step = 0.1)
+sliderInput("slideminzone2", label = "Minimum Temperature",
+             value = 19, min = 15, max = 25, step = 0.1)
+```
+
+
+
+
+Central/Lakeshore & Maseno/Kajulu zones {data-orientation=rows} 
+===============================================================================
+
+Row {data-height=120}
+--------------------------------------------------------------------------
+
+
+### 
+```{r}
+renderValueBox({
+
+max.avg <- z1 %>% filter(date >=input$formerdate & date <=input$latterdate) %>% 
+  summarise(maximum.temp = round(mean(MaxT, na.rm=TRUE),1))
+
+  
+valueBox(value = max.avg$maximum.temp, subtitle = "Average maximum temperature") 
+
+    })
+```
+
+
+### 
+```{r}
+renderValueBox({
+
+min.avg <- z1 %>% 
+    select(MinT, date) %>% filter(date >=input$formerdate & date <=input$latterdate) %>% 
+  summarise(minimum.temp = round(mean(MinT, na.rm=TRUE),1))
+ 
+valueBox(value = min.avg$minimum.temp, subtitle = "Average minimum temperature") 
+
+})
+
+
+```
+
+
+Row{.tabset .tabset-fade}
+-------------------------------------------------------------------------------
+
+### Weather-Table
+
+```{r, Weather-table-zone1}
+renderDataTable({
+input$act # Action button  
+  
+if(input$act == 0){
+  return()  
+  }else{z1 %>% 
+    filter(date >=input$formerdate & date <=input$latterdate) %>%
+         datatable(style = "bootstrap4", filter = "none", rownames = FALSE) %>% isolate()
+  }
+  
+})
+```
+
+### Morning 
+
+```{r, morning-weather-zone1}
+
+renderPlotly({
+input$act # Action button
+
+Different = z1 %>% filter(date >=input$formerdate & date <=input$latterdate) %>% nrow()
+
+plotly1 <- z1 %>% 
+  filter(date >=input$formerdate & date <=input$latterdate) %>% 
+  group_by(Morning) %>%
+  summarise(Count = n(), pct = round(Count*100/Different,2))%>% 
+  ggplot(mapping = aes(x=Morning,y=pct))+
+   geom_bar(stat = "identity", fill = "#336699", alpha = 0.75)+
+   theme(axis.text.x = element_text(angle=45, hjust=1))+
+   labs(x="Morning Weather", title = "Morning Weather\nDistribution [%]", subtitle = paste(input$formerdate,"to",input$latterdate))+
+  theme_gdocs()
+
+if(input$act == 0){
+  return()}
+else{ggplotly(plotly1) %>% 
+    config(displayModeBar=FALSE) %>% 
+    isolate()
+}
+
+  }
+)
+```
+
+
+
+### Afternoon
+
+```{r, afternoon-weather-zone1}
+renderPlotly({
+input$act # Action button
+  
+Different = z1 %>% filter(date >=input$formerdate & date <=input$latterdate) %>% nrow()
+
+plotly2 <- z1 %>% 
+  filter(date >=input$formerdate & date <=input$latterdate)%>% 
+  group_by(Afternoon) %>%
+  summarise(Count = n(), pct = round(Count*100/Different,2))%>% 
+  ggplot(mapping = aes(x=reorder(Afternoon, pct),y=pct))+
+   geom_bar(stat = "identity", fill = "#336699", alpha = 0.75)+
+   theme(axis.text.x = element_text(angle=45, hjust=1))+
+   labs(x="Afternoon Weather", title = "Afternoon Weather\nDistribution [%]", subtitle = paste(input$formerdate,"to",input$latterdate))+
+  theme_gdocs()
+
+  if(input$act == 0){
+  return()
+  }else{ggplotly(plotly2) %>% 
+    config(displayModeBar=FALSE) %>% 
+    isolate()
+}
+
+  }
+)
+```
+
+
+### Night
+
+```{r, night-weather-zone1}
+renderPlotly({
+input$act # Action button
+
+Different = z1 %>% 
+  filter(date >=input$formerdate & date <=input$latterdate) %>% nrow()  
+  
+plotly3 <- z1 %>% 
+  filter(date >=input$formerdate & date <=input$latterdate)%>% 
+  group_by(Night) %>%
+  summarise(Count = n(), pct = round(Count*100/Different,2))%>% 
+  ggplot(mapping = aes(x=reorder(Night, pct),y=pct))+
+   geom_bar(stat = "identity", fill = "#336699", alpha = 0.75)+
+   theme(axis.text.x = element_text(angle=45, hjust=1))+
+   labs(x="Night Weather", title = "Night Weather\nDistribution [%]", subtitle = paste(input$formerdate,"to",input$latterdate))+
+  theme_gdocs()
+
+if(input$act == 0){
+  return()
+}else{
+  ggplotly(plotly3) %>% 
+    config(displayModeBar=FALSE) %>% 
+    isolate()
+
+  }
+
+})
+```
+
+
+
+### Rainfall Distribution
+```{r, Rainfall-Distribution-zone1}
+renderPlotly({
+input$act # Action button
+rain <- z1[!is.na(z1$Distribution), ]
+Different = rain %>% 
+  filter(date >=input$formerdate & date <=input$latterdate) %>% nrow()
+
+if(input$act == 0){
+  return()
+}else{rain %>% 
+  filter(date >=input$formerdate & date <=input$latterdate) %>% 
+  group_by(Distribution) %>% 
+  summarise(Count = n(), pct = round(Count*100/Different,2)) %>% 
+  ggplot(mapping = aes(x=reorder(Distribution,pct),y=pct))+
+  geom_bar(stat = "identity",  fill = "#336699", alpha = 0.75)+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Rainfall Distribution", title = "Rainfall\nDistribution [%]", subtitle = paste(input$formerdate,"to",input$latterdate))+
+  theme_gdocs() %>% isolate()
+}
+  })
+```
+
+
+
+### Daily Temperature
+```{r, Daily-max-min-Temperature-in-Celcius-zone1}
+renderDygraph({
+  input$act # Action button
+  if(input$act == 0){
+    return()
+  }else{
+  z1 %>% select(date, MaxT, MinT) %>% 
+  mutate(Temp.range = MaxT-MinT)%>% 
+  filter(date >=input$formerdate & date <=input$latterdate)%>% dygraph(ylab = "Temperature (Celcius)") %>% isolate()
+  }
+})
+```
+
+
+
+
+Key{data-orientation=columns}
+==============================================================================
+
+Row {.tabset .tabset-fade}
+-------------------------------------------------------------------------------
+
+
+### Regions
+
+#### Central/Lakeshore & Maseno/Kajulu zones
+These zones consist of the following towns: 
+Kisumu, Kombewa, Ahero, Kiboswa, Kibigori, Maseno, Kajulu
+
+
+#### Eastern Climatic zone 
+This zone consist of the following towns:
+Muhoroni, Chemelil, Awasi, Sondu, Koru
+
+
+### Rainfall Classification
+
+```{r, Key-rainfall-classification}
+data.frame(Rainfall.Categories=c("Light rain",
+                                 "Moderate",
+                                 "Heavy",
+                                 "Very heavy rain"),
+           Rainfall.Amounts=c("Less than 5mm",
+                              "5-20mm",
+                              "20-50mm",
+                              "> 50mm")) %>% datatable(style = "bootstrap4", filter = "none", rownames = FALSE)
+
+```
+
+
+### Rainfall Distribution
+
+```{r, Key-rainfall-distribution}
+data.frame(Rainfall.Distribution=c("Few places",
+                                   "Many places",
+                                   "Most places"),
+           Aerial.Coverage=c("Less than 33%","
+                             33%-67%",
+                             "More than 67%"))%>% 
+             datatable(style = "bootstrap4", filter = "none", rownames = FALSE)
+
+```
+
+
+
+
+Eastern Climatic zone {data-orientation=rows} 
+===============================================================================
+
+Row {data-height=120}
+--------------------------------------------------------------------------
+
+
+### 
+```{r}
+renderValueBox({
+
+max.avg <- z2 %>% filter(date >=input$formerdate & date <=input$latterdate) %>% 
+  summarise(maximum.temp = round(mean(MaxT, na.rm=TRUE),1))
+
+  
+valueBox(value = max.avg$maximum.temp, subtitle = "Average maximum temperature") 
+
+    })
+```
+
+
+### 
+```{r}
+renderValueBox({
+
+min.avg <- z2 %>% 
+    select(MinT, date) %>% filter(date >=input$formerdate & date <=input$latterdate) %>% 
+  summarise(minimum.temp = round(mean(MinT, na.rm=TRUE),1))
+ 
+valueBox(value = min.avg$minimum.temp, subtitle = "Average minimum temperature") 
+
+})
+
+
+```
+
+
+Row{.tabset .tabset-fade}
+-------------------------------------------------------------------------------
+
+### Weather-Table
+
+```{r, Weather-table-zone2}
+renderDataTable({
+input$act # Action button  
+  
+if(input$act == 0){
+  return()  
+  }else{z2 %>% 
+    filter(date >=input$formerdate & date <=input$latterdate) %>%
+         datatable(style = "bootstrap4", filter = "none", rownames = FALSE) %>% isolate()
+  }
+  
+})
+```
+
+### Morning 
+
+```{r, morning-weather-zone2}
+
+renderPlotly({
+input$act # Action button
+
+Different = z2 %>% filter(date >=input$formerdate & date <=input$latterdate) %>% nrow()
+
+plotly1 <- z2 %>% 
+  filter(date >=input$formerdate & date <=input$latterdate) %>% 
+  group_by(Morning) %>%
+  summarise(Count = n(), pct = round(Count*100/Different,2))%>% 
+  ggplot(mapping = aes(x=Morning,y=pct))+
+   geom_bar(stat = "identity", fill = "#336699", alpha = 0.75)+
+   theme(axis.text.x = element_text(angle=45, hjust=1))+
+   labs(x="Morning Weather", title = "Morning Weather\nDistribution [%]", subtitle = paste(input$formerdate,"to",input$latterdate))+
+  theme_gdocs()
+
+if(input$act == 0){
+  return()}
+else{ggplotly(plotly1) %>% 
+    config(displayModeBar=FALSE) %>% 
+    isolate()
+}
+
+  }
+)
+```
+
+
+
+### Afternoon
+
+```{r, afternoon-weather-zone2}
+renderPlotly({
+input$act # Action button
+  
+Different = z2 %>% filter(date >=input$formerdate & date <=input$latterdate) %>% nrow()
+
+plotly2 <- z2 %>% 
+  filter(date >=input$formerdate & date <=input$latterdate)%>% 
+  group_by(Afternoon) %>%
+  summarise(Count = n(), pct = round(Count*100/Different,2))%>% 
+  ggplot(mapping = aes(x=reorder(Afternoon, pct),y=pct))+
+   geom_bar(stat = "identity", fill = "#336699", alpha = 0.75)+
+   theme(axis.text.x = element_text(angle=45, hjust=1))+
+   labs(x="Afternoon Weather", title = "Afternoon Weather\nDistribution [%]", subtitle = paste(input$formerdate,"to",input$latterdate))+
+  theme_gdocs()
+
+  if(input$act == 0){
+  return()
+  }else{ggplotly(plotly2) %>% 
+    config(displayModeBar=FALSE) %>% 
+    isolate()
+}
+
+  }
+)
+```
+
+
+### Night
+
+```{r, night-weather-zone2}
+renderPlotly({
+input$act # Action button
+
+Different = z2 %>% 
+  filter(date >=input$formerdate & date <=input$latterdate) %>% nrow()  
+  
+plotly3 <- z2 %>% 
+  filter(date >=input$formerdate & date <=input$latterdate)%>% 
+  group_by(Night) %>%
+  summarise(Count = n(), pct = round(Count*100/Different,2))%>% 
+  ggplot(mapping = aes(x=reorder(Night, pct),y=pct))+
+   geom_bar(stat = "identity", fill = "#336699", alpha = 0.75)+
+   theme(axis.text.x = element_text(angle=45, hjust=1))+
+   labs(x="Night Weather", title = "Night Weather\nDistribution [%]", subtitle = paste(input$formerdate,"to",input$latterdate))+
+  theme_gdocs()
+
+if(input$act == 0){
+  return()
+}else{
+  ggplotly(plotly3) %>% 
+    config(displayModeBar=FALSE) %>% 
+    isolate()
+
+  }
+
+})
+```
+
+
+
+### Rainfall Distribution
+```{r, Rainfall-Distribution-Zone2}
+renderPlotly({
+input$act # Action button
+rain <- z2[!is.na(z2$Distribution), ]
+Different = rain %>% 
+  filter(date >=input$formerdate & date <=input$latterdate) %>% nrow()
+
+if(input$act == 0){
+  return()
+}else{rain %>% 
+  filter(date >=input$formerdate & date <=input$latterdate) %>% 
+  group_by(Distribution) %>% 
+  summarise(Count = n(), pct = round(Count*100/Different,2)) %>% 
+  ggplot(mapping = aes(x=reorder(Distribution,pct),y=pct))+
+  geom_bar(stat = "identity",  fill = "#336699", alpha = 0.75)+
+  theme(axis.text.x = element_text(angle=45, hjust=1))+
+  labs(x="Rainfall Distribution", title = "Rainfall\nDistribution [%]", subtitle = paste(input$formerdate,"to",input$latterdate))+
+  theme_gdocs() %>% isolate()
+}
+  })
+```
+
+
+
+### Daily Temperature
+```{r, Daily-max-min-Temperature-in-Celcius-zone2}
+renderDygraph({
+  input$act # Action button
+  if(input$act == 0){
+    return()
+  }else{
+  z2 %>% select(date, MaxT, MinT) %>% 
+  mutate(Temp.range = MaxT-MinT)%>% 
+  filter(date >=input$formerdate & date <=input$latterdate)%>% dygraph(ylab = "Temperature (Celcius)") %>% isolate()
+  }
+})
+```
+
+
+
+
+
+Rainfall Prediction model{data-orientation=rows}
+===============================================================================
+
+Row
+-------------------------------------------------------
+
+### Central/Lakeshore & Maseno/Kajulu zones
+
+```{r, rain-model-zone1}
+renderDataTable({
+
+z1.rainm.prediction = predict(z1.rain.model,
+data.frame(MaxT=c(input$slidemaxzone1),MinT=c(input$slideminzone1)),
+se.fit = T, type = "response")
+
+input$act2 # Action button 2
+
+if(input$act2 == 0){
+  return()
+}else{
+ tibble(Maximum.Temp = c(input$slidemaxzone1),
+        Minimum.Temp = c(input$slideminzone1),
+        Rain.probability = c(
+          paste(round(z1.rainm.prediction$fit*100,0),"%"))) %>% 
+   datatable() %>% 
+   isolate()
+}
+ })
+```
+
+
+
+
+
+### Eastern Zone
+
+```{r, rain-model-zone2}
+renderDataTable({
+  
+z2.rainm.prediction = predict(z2.rain.model,
+                              tibble(MaxT = c(input$slidemaxzone2),
+                                     MinT = c(input$slideminzone2)),
+                              se.fit = T, type = "response")
+
+input$act2 # Action button 2
+
+if(input$act2 == 0){
+  return()
+}else{
+   tibble(Maximum.Temp = c(input$slidemaxzone2),
+        Minimum.Temp = c(input$slideminzone2),
+        Rain.probability = c(
+      paste(round(z2.rainm.prediction$fit*100,0),"%"))) %>% 
+   datatable() %>% 
+   isolate()
+}
+
+})
+```
+
+
+
+
+Contacts
+===============================================================================
+
+**For further information, please contact:**
+
+County Director of Meteorology: **Paul N.Oloo**
+
+Mobile: [0721624918](0721624918)
+
+Email: [paul_oloo@yahoo.com](paul_oloo@yahoo.com)
+
+**More information about the climate and weather in Kenya is on the KMD website:** [http://www.meteo.go.ke/](http://www.meteo.go.ke/)
+
+
+**Contributors:**
+
+- Mr.Gift Bugame: 
+  + Mobile :[0757597966](0757597966)
+  + Email :[giftbugame@yahoo.com](giftbugame@yahoo.com)
+    
+- Dr.Thomas Mawora:
+  + Mobile :[0726878579](0726878579)
+  + Email :[tmawora@maseno.ac.ke](tmawora@maseno.ac.ke)
