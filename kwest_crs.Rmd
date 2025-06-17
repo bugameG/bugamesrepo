@@ -1,0 +1,3227 @@
+---
+title: "CRS - Kisumu West 2023"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: yeti
+    vertical_layout: scroll
+    orientation: rows
+    social: ["twitter", "linkedin"]
+    favicon: CRS.png
+    
+---
+
+```{r ,global_options, include=FALSE}
+library(knitr)
+opts_chunk$set(message=FALSE, warning=FALSE, tidy.opts = list(width.cutoff=60))
+suppressPackageStartupMessages(library(ggthemes))
+suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(shiny))
+suppressPackageStartupMessages(library(flexdashboard))
+suppressPackageStartupMessages(library(pander))
+suppressPackageStartupMessages(library(kableExtra))
+suppressPackageStartupMessages(library(viridis))
+suppressPackageStartupMessages(library(readxl))
+
+crs.b.sheets<-excel_sheets( # Birth template 2023 excel sheets
+    "Revised Birth Template Tool 2023N .xlsx")
+
+### January 2023 returns
+crs.b.jan<-data.frame(read_excel(
+  "Revised Birth Template Tool 2023N .xlsx",
+  sheet = crs.b.sheets[1], col_names = TRUE))
+
+# Columns of interest
+crs.b.jan<-crs.b.jan[,c(2,3,5,6,7)]
+crs.b.jan$id<-as.integer(seq(from=1, to=,533 ,by=1))
+
+
+# Renaming of columns
+crs.b.jan<-
+  crs.b.jan %>%
+  rename(sex = Sex...Indicate.whether.male.or.female.,
+         pob = Place.of.birth....Indicate.the.name.of.facility.or.Sublocation.of.birth.,
+         place.type = Type.of.place...Indicate.whether.Home.or.Health.Facility.,
+         mom.age = Age.of.the.mother....indicate.the.age.of.the.mother.at.the.birth.of.the.child.,
+         nob = Nature.of.birth...Indicate.whether.born.alive.or.dead.)
+  
+
+
+# Column type convertion
+crs.b.jan$sex<-factor(crs.b.jan$sex)
+crs.b.jan$pob<-factor(crs.b.jan$pob)
+crs.b.jan$place.type<-factor(crs.b.jan$place.type)
+crs.b.jan$nob<-factor(crs.b.jan$nob)
+
+unique(crs.b.jan$mom.age)# not stated to NA
+crs.b.jan[crs.b.jan$mom.age == "not stated", 5]<-NA
+# Column type convertion
+crs.b.jan$mom.age<-as.numeric(crs.b.jan$mom.age)
+
+
+
+# Factor restructuring
+crs.b.jan<-crs.b.jan %>% 
+ mutate(sex=fct_recode(sex, "female" = "Female","male" = "Male"),
+        pob=fct_recode(pob, "airport health centre"="Airport health centre",
+                       "chulaimbo county hospital"="Chulaimbo County Hospital",
+                       "chulaimbo county hospital"="chulaimbo County Hospital",
+                       "barkorwa health centre"="Barkorwa Health Centre",
+                       "kombewa county hospital"="Kombewa County Hospital",
+                       "manyuanda sc hospital"="manyuanda s.c. Hospital",
+                       "maseno mission hospital"="Maseno Mission hospital",
+                       "miranga sc hospital"="Miranga S C Hospital",
+                       "ojola sc hospital"="Ojola S C Hospital",
+                       "port florence hospital"="Port Florence Hospital",
+                       "riat dispensary"="Riat Dispensary",
+                       "st jairus hospital"="st jairus Hospital"),
+        nob=fct_recode(nob, "dead"="Dead", "alive"="Alive"))
+                 
+
+jan.births<-crs.b.jan # Clean data re-assignment
+
+
+# Age-bracket
+jan.births$jan.age.cut<-cut(jan.births$mom.age,
+                            breaks=c(-Inf,17,19,29,39,49,Inf), 
+                            labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+```
+
+
+January{data-navmenu="Births"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total births recorded
+
+```{r}
+nrow(jan.births) %>% 
+  valueBox(color="powderblue")
+```
+
+### Hospital births
+
+```{r}
+jan.births %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home births
+
+```{r}
+jan.births %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born alive
+
+```{r}
+jan.births %>% 
+  filter(nob== "alive") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born dead
+
+```{r}
+jan.births %>% 
+  filter(nob == "dead") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility births
+
+```{r}
+hf.jan<-jan.births %>% 
+  filter(place.type == 'Health Facility') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility births",
+       subtitle = "January 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.jan)
+```
+
+
+### Home births
+
+```{r}
+hm.jan<-jan.births %>% 
+  filter(place.type == 'Home') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home births",
+       subtitle = "January 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.jan)
+```
+
+
+### Gender
+
+```{r}
+gen.jan<-jan.births %>% 
+  group_by(sex) %>%
+  summarise(number = n(),
+            pct = round(number*100/nrow(jan.births),1)) %>% 
+  arrange(desc(number)) %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill=c("midnightblue","hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.jan)
+
+
+```
+
+
+
+### Child bearing age
+```{r}
+# length(na.omit(jan.births$jan.age.cut))
+jan.births$jan.age.cut<-cut(jan.births$mom.age,
+                     breaks=c(-Inf,17,19,29,39,49,Inf), 
+                     labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+jan.bracket<-jan.births %>% 
+  group_by(jan.age.cut) %>% 
+  na.omit() %>% 
+  summarise(Count=n(),
+            pct=round(Count*100/506,2))%>% 
+  ggplot()+
+  geom_bar(stat='identity', aes(x=jan.age.cut,y=pct),
+           fill="royalblue4", alpha=0.5)+
+  labs(x="Age bracket",
+       y="pct [%]",
+       title = "Child bearing age")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(jan.bracket)
+```
+
+### Insights
+
+- 98.87% of the births are from health facilities
+
+
+- 1.12% of the births are from home
+
+
+- 97.4% of the children are born alive
+
+
+- 2.06% of the children are born dead
+
+
+- Sub-Chiefs from the following locations brought their monthly returns;
+  
+  + Korando B - 2 
+  + Lower Kombewa - 2
+  + Bar A - 1
+  + Lower Kanyawegi -1 
+
+
+
+- 5.34% of the mothers are below 18 years of age
+
+
+- 53.5% of the newborns are male
+
+
+- 46.5% of the newborns are female
+
+
+
+
+
+
+
+
+<!-- February 2023--->
+
+```{r}
+### February 2023
+crs.b.feb<-data.frame(read_excel(
+  "Revised Birth Template Tool 2023N .xlsx",
+  sheet = crs.b.sheets[2], col_names = TRUE))
+
+
+# Columns of interest
+crs.b.feb<-crs.b.feb[,c(2,3,5,6,7)]
+crs.b.feb$id<-as.integer(seq(from=534, to=1144, by=1))
+
+# Renaming of columns
+crs.b.feb<-
+  crs.b.feb %>%
+  rename(sex = Sex...Indicate.whether.male.or.female.,
+         pob = Place.of.birth....Indicate.the.name.of.facility.or.Sublocation.of.birth.,
+         place.type = Type.of.place...Indicate.whether.Home.or.Health.Facility.,
+         mom.age = Age.of.the.mother....indicate.the.age.of.the.mother.at.the.birth.of.the.child.,
+         nob = Nature.of.birth...Indicate.whether.born.alive.or.dead.)
+
+
+# Column type convertion
+crs.b.feb$sex<-factor(crs.b.feb$sex)
+crs.b.feb$pob<-factor(crs.b.feb$pob)
+crs.b.feb$place.type<-factor(crs.b.feb$place.type)
+
+crs.b.feb[is.na(crs.b.feb$nob), 2]<-"not stated"
+crs.b.feb$nob<-factor(crs.b.feb$nob)
+
+crs.b.feb[crs.b.feb$mom.age == "not stated" | crs.b.feb$mom.age == "N/A", 5]<-NA
+crs.b.feb$mom.age<-as.numeric(crs.b.feb$mom.age)
+
+
+# Factor restructuring
+crs.b.feb<-crs.b.feb %>% 
+  mutate(sex=fct_recode(sex, "female" = "Female","male" = "Male"),
+         pob=fct_recode(pob, "maseno mission hospital"="Maseno mission Hospital",
+                             "alluc medical centre"="Alluc Medical Centre",
+                             "barkorwa health centre"="Barkorwa Health centre",
+                             "chulaimbo county hospital"="Chulaimbo County Hospital",
+                        "kombewa county hospital"="Kombewa County Hospital",
+                        "lwala kadawa health centre"="Lwala Kadawa H/C",
+                        "manyuanda sc hospital"="Manyuanda S.C Hospital",
+                        "masaba hospital limited"="Masaba Hospital Limited",
+                        "maseno mission hospital"="Maseno Mission Hospital",
+                        "miranga sc hospital"="Miranga S C Hospital",
+                        "nyahera sc hospital"="Nyahera S.C.Hospital",
+                        "ober kamoth sc hospital"="Ober Kamoth S C Hospital",
+                        "port florence hospital"="Port Florence  Hospital",
+                        "st jairus hospital"="St Jairus Hospital"),
+         nob=fct_recode(nob, "dead"="Dead", "alive"="Alive"))
+
+
+feb.births<-crs.b.feb # Clean data re-assignment
+
+# Age-bracket
+feb.births$feb.age.cut<-cut(feb.births$mom.age,
+                            breaks=c(-Inf,17,19,29,39,49,Inf), 
+                            labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+```
+
+
+February{data-navmenu="Births"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total births recorded
+
+```{r}
+nrow(feb.births) %>% 
+  valueBox(color="powderblue")
+```
+
+### Hospital births
+
+```{r}
+feb.births %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home births
+
+```{r}
+feb.births %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born alive
+
+```{r}
+feb.births %>% 
+  filter(nob== "alive") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born dead
+
+```{r}
+feb.births %>% 
+  filter(nob == "dead") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility births
+
+```{r}
+hf.feb<-feb.births %>% 
+  filter(place.type == 'Health Facility') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility births",
+       subtitle = "February 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.feb)
+```
+
+
+### Home births
+
+```{r}
+hm.feb<-feb.births %>% 
+  filter(place.type == 'Home') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home births",
+       subtitle = "February 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.feb)
+```
+
+
+### Gender
+
+```{r}
+gen.feb<-feb.births %>% 
+  group_by(sex) %>%
+  summarise(number = n(),
+            pct = round(number*100/nrow(feb.births),1)) %>% 
+  arrange(desc(number)) %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill=c("hotpink3","midnightblue"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.feb)
+
+```
+
+
+### Child bearing age
+```{r}
+# length(na.omit(feb.births$feb.age.cut))
+feb.births$feb.age.cut<-cut(feb.births$mom.age,
+                     breaks=c(-Inf,17,19,29,39,49,Inf), 
+                     labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+feb.bracket<-feb.births %>% 
+  group_by(feb.age.cut) %>% 
+  na.omit() %>% 
+  summarise(Count=n(),
+            pct=round(Count*100/590,2)) %>% 
+  ggplot()+
+  geom_bar(stat='identity', aes(x=feb.age.cut,y=pct),
+           fill="royalblue4", alpha=0.5)+
+  labs(x="Age bracket",
+       y="pct [%]",
+       title = "Child bearing age")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(feb.bracket)
+```
+
+
+### Insights
+- 100% of the births are from health facilities
+
+
+- 97.2% of the children are born alive
+
+
+- 1.96% of the children are born dead
+
+
+- No home birth was recorded
+
+
+- 6.1% of the mothers are below 18 years of age
+
+
+- 47% of the newborns are male
+
+
+- 53% of the newborns are female
+
+
+
+
+
+<!-- March 2023--->
+ 
+```{r}
+crs.b.mar<-data.frame(read_excel(
+  "Revised Birth Template Tool 2023N .xlsx",
+  sheet = crs.b.sheets[3], col_names = TRUE))
+
+# Columns of interest
+crs.b.mar<-crs.b.mar[,c(2,3,5,6,7)]
+crs.b.mar$id<-as.integer(seq(from=1145, to=1772, by=1))
+
+# Renaming of columns
+crs.b.mar<-
+  crs.b.mar %>%
+  rename(sex = Sex...Indicate.whether.male.or.female.,
+         pob = Place.of.birth....Indicate.the.name.of.facility.or.Sublocation.of.birth.,
+         place.type = Type.of.place...Indicate.whether.Home.or.Health.Facility.,
+         mom.age = Age.of.the.mother....indicate.the.age.of.the.mother.at.the.birth.of.the.child.,
+         nob = Nature.of.birth...Indicate.whether.born.alive.or.dead.)
+
+# Column type convertion
+crs.b.mar$sex<-factor(crs.b.mar$sex)
+crs.b.mar$pob<-factor(crs.b.mar$pob)
+crs.b.mar$place.type<-factor(crs.b.mar$place.type)
+crs.b.mar$nob<-factor(crs.b.mar$nob)
+
+crs.b.mar[crs.b.mar$mom.age == "not stated" , 5]<-NA
+crs.b.mar$mom.age<-as.numeric(crs.b.mar$mom.age)
+
+# Factor restructuring
+crs.b.mar<-crs.b.mar %>% 
+  mutate(sex=fct_recode(sex, "female" = "Female","male" = "Male"),
+         nob=fct_recode(nob, "alive"="Alive"),
+         place.type=fct_recode(place.type, "Health Facility"="health facility",
+                                            "Home"="home"),
+         pob=fct_recode(pob, "maseno mission hospital"="Maseno mission hospital",
+                        "ojola sc hospital"="ojolla sub county hospital",
+                        "manyuanda sc hospital"="manyuanda s.c hospital",
+                        "maseno university health centre"="maseno university H/C",
+                        "lwala kadawa health centre"="Lwala kadawa",
+                        "kombewa county hospital"="Kombewa  county hospital",
+                        "chulaimbo county hospital"="chulaimbo s.c hospital",
+                        "airport health centre"="Airport health centre",
+                        "masaba hospital limited"="masaba hospital",
+                        "st jairus hospital"="st. jairus hospital",
+                        "miranga sc hospital"="Miranga s.c hospital",
+                        "East Reru"="east reru",
+                        "Kit Mikayi"="kitmikayi",
+                        "Korando A"="korando A",
+                        "Lower Kombewa"="lower kombewa"))
+
+mar.births<-crs.b.mar # Clean data re-assignment
+
+# Age-bracket
+mar.births$mar.age.cut<-cut(mar.births$mom.age,
+                            breaks=c(-Inf,17,19,29,39,49,Inf), 
+                            labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+```
+
+
+March{data-navmenu="Births"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total births recorded
+
+```{r}
+nrow(mar.births) %>% 
+  valueBox(color="powderblue")
+```
+
+### Hospital births
+
+```{r}
+mar.births %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home births
+
+```{r}
+mar.births %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born alive
+
+```{r}
+mar.births %>% 
+  filter(nob== "alive") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born dead
+
+```{r}
+mar.births %>% 
+  filter(nob == "dead") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility births
+
+```{r}
+hf.mar<-mar.births %>% 
+  filter(place.type == 'Health Facility') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility births",
+       subtitle = "March 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.mar)
+```
+
+
+### Home births
+
+```{r}
+hm.mar<-mar.births %>% 
+  filter(place.type == 'Home') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home births",
+       subtitle = "March 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.mar)
+```
+
+
+### Gender
+
+```{r}
+gen.mar<-mar.births %>% 
+  group_by(sex) %>%
+  na.omit() %>% 
+  summarise(number = n(),
+            pct = round(number*100/605,1)) %>% 
+  arrange(desc(pct)) %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8,
+           fill=c("hotpink3","midnightblue"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.mar)
+
+
+```
+
+
+### Child bearing age
+```{r}
+# length(na.omit(mar.births$mar.age.cut))
+mar.births$mar.age.cut<-cut(mar.births$mom.age,
+                     breaks=c(-Inf,17,19,29,39,49,Inf), 
+                     labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+mar.bracket<-mar.births %>% 
+  group_by(mar.age.cut) %>% 
+  summarise(Count=n(),
+            pct=round(Count*100/610,2)) %>%
+  na.omit()%>% 
+  ggplot()+
+  geom_bar(stat='identity', aes(x=mar.age.cut,y=pct),
+           fill="royalblue4", alpha=0.5)+
+  labs(x="Age bracket",
+       y="pct [%]",
+       title = "Child bearing age")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(mar.bracket)
+```
+
+
+### Insights
+- 99.4% of the births are from health facilities
+
+
+- 98.2% of the children are born alive
+
+
+- 0.96% of the children are born dead
+
+
+- Home births were recorded in the following sub-locations;
+  
+  + Korando A - 1 
+  + Lower Kombewa - 1
+  + Kit-Mikayi - 1
+  + East Reru -1 
+
+
+
+- 4.92% of the mothers are below 18 years of age
+
+
+- 49.1% of the newborns are male
+
+
+- 50.9% of the newborns are female
+
+
+
+
+
+<!-- April 2023--->
+ 
+```{r}
+### April 2023
+crs.b.apr<-data.frame(read_excel(
+  "Revised Birth Template Tool 2023N .xlsx",
+  sheet = crs.b.sheets[4]))
+
+# Columns of interest
+crs.b.apr<-crs.b.apr[,c(2,3,5,6,7)]
+crs.b.apr$id<-as.integer(seq(from=1773, to=2294, by=1))
+
+# Renaming of columns
+crs.b.apr<-
+  crs.b.apr %>%
+  rename(sex = Sex...Indicate.whether.male.or.female.,
+         pob = Place.of.birth....Indicate.the.name.of.facility.or.Sublocation.of.birth.,
+         place.type = Type.of.place...Indicate.whether.Home.or.Health.Facility.,
+         mom.age = Age.of.the.mother....indicate.the.age.of.the.mother.at.the.birth.of.the.child.,
+         nob = Nature.of.birth...Indicate.whether.born.alive.or.dead.)
+
+# Column type convertion
+crs.b.apr$sex<-factor(crs.b.apr$sex)
+crs.b.apr$pob<-factor(crs.b.apr$pob)
+crs.b.apr$place.type<-factor(crs.b.apr$place.type)
+crs.b.apr$nob<-factor(crs.b.apr$nob)
+
+crs.b.apr[crs.b.apr$mom.age == "not indicated" | crs.b.apr$mom.age ==  "N/A" , 5]<-NA
+crs.b.apr$mom.age<-as.numeric(crs.b.apr$mom.age)
+
+
+# Factor restructuring
+crs.b.apr<-crs.b.apr %>% 
+  mutate(sex=fct_recode(sex, "female" = "Female","male" = "Male"),
+         nob=fct_recode(nob, "alive"="Alive",
+                        "dead"="Dead"),
+         pob=fct_recode(pob, "otieno owala health centre"="Otieno Owala",
+                        "maseno university health centre"="maseno university",
+                        "st jairus hospital"="St. Jairus hospital",
+                        "ratta health centre"="Ratta Health Centre",
+                        "port florence hospital"="Port Florence Hospital",
+                        "manyuanda sc hospital"="Manyuanda S C Hospital",
+                        "asat beach dispensary"="Asat Beach Dispensary",
+                        "kombewa county hospital"="Kombewa County Hopital",
+                        "masaba hospital limited"="Masaba Hospital Limited",
+                        "alluc medical centre"="Alluc Medical Centre",
+                        "maseno mission hospital"="Maseno Mission Hospital",
+                        "ober kamoth sc hospital"="Ober Kamoth S C Hospital",
+                        "miranga sc hospital"="Miranga S C Hospital",
+                        "chulaimbo county hospital"="Chulaimbo County Hospital"))
+
+apr.births<-crs.b.apr # Clean data re-assignment
+
+# Age-bracket
+apr.births$apr.age.cut<-cut(apr.births$mom.age,
+                            breaks=c(-Inf,17,19,29,39,49,Inf), 
+                            labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+```
+
+
+April{data-navmenu="Births"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total births recorded
+
+```{r}
+nrow(apr.births) %>% 
+  valueBox(color="powderblue")
+```
+
+### Hospital births
+
+```{r}
+apr.births %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home births
+
+```{r}
+apr.births %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born alive
+
+```{r}
+apr.births %>% 
+  filter(nob== "alive") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born dead
+
+```{r}
+apr.births %>% 
+  filter(nob == "dead") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility births
+
+```{r}
+hf.apr<-apr.births %>% 
+  filter(place.type == 'Health Facility') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility births",
+       subtitle = "April 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.apr)
+```
+
+
+### Home births
+
+```{r}
+hm.apr<-apr.births %>% 
+  filter(place.type == 'Home') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home births",
+       subtitle = "April 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.apr)
+```
+
+
+### Gender
+
+```{r}
+gen.apr<-apr.births %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/522,1)) %>% 
+  arrange(desc(pct)) %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8,
+           fill=c("midnightblue","hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.apr)
+
+
+```
+
+
+### Child bearing age
+```{r}
+# length(na.omit(apr.births$apr.age.cut))
+apr.births$apr.age.cut<-cut(apr.births$mom.age,
+                     breaks=c(-Inf,17,19,29,39,49,Inf), 
+                     labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+apr.bracket<-apr.births %>% 
+  group_by(apr.age.cut)  %>% 
+  summarise(Count=n(),
+            pct=round(Count*100/509,2)) %>%
+  na.omit() %>% 
+  ggplot()+
+  geom_bar(stat='identity', aes(x=apr.age.cut,y=pct),
+           fill="royalblue4", alpha=0.5)+
+  labs(x="Age bracket",
+       y="pct [%]",
+       title = "Child bearing age")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(apr.bracket)
+```
+
+
+### Insights
+- 100% of the births are from health facilities
+
+
+- 98.9% of the children are born alive
+
+
+- 1.1% of the children are born dead
+
+
+- No home birth was recorded
+
+
+- 4.91% of the mothers are below 18 years of age
+
+
+- 50.2% of the newborns are male
+
+
+- 49.8% of the newborns are female
+
+
+
+
+<!-- May 2023--->
+
+```{r}
+### May 2023
+crs.b.may<-data.frame(read_excel(
+  "Revised Birth Template Tool 2023N .xlsx",
+  sheet = crs.b.sheets[5], col_names = TRUE))
+
+# Columns of interest
+crs.b.may<-crs.b.may[,c(2,3,5,6,7)]
+crs.b.may$id<-as.integer(seq(from=2295, to=2861, by=1))
+
+# Renaming of columns
+crs.b.may<-
+  crs.b.may %>%
+  rename(sex = Sex...Indicate.whether.male.or.female.,
+         pob = Place.of.birth....Indicate.the.name.of.facility.or.Sublocation.of.birth.,
+         place.type = Type.of.place...Indicate.whether.Home.or.Health.Facility.,
+         mom.age = Age.of.the.mother....indicate.the.age.of.the.mother.at.the.birth.of.the.child.,
+         nob = Nature.of.birth...Indicate.whether.born.alive.or.dead.)
+
+# Column type convertion
+crs.b.may$sex<-factor(crs.b.may$sex)
+crs.b.may$pob<-factor(crs.b.may$pob)
+crs.b.may$place.type<-factor(crs.b.may$place.type)
+crs.b.may$nob<-factor(crs.b.may$nob)
+crs.b.may$mom.age<-as.numeric(crs.b.may$mom.age)
+
+# Factor restructuring
+crs.b.may<-crs.b.may %>% 
+  mutate(sex=fct_recode(sex, "female" = "Female"),
+         place.type=fct_recode(place.type, "Health Facility"="Health facility"),
+         nob=fct_recode(nob, "dead" = "Dead"),
+         pob=fct_recode(pob, "chulaimbo county hospital"="Chulaimbo County Hospital",
+                        "ober kamoth sc hospital"="Ober kamoth s.c Hospital",
+                        "ratta health centre"="Ratta H/C",
+                        "st jairus hospital"="St jairus hospital",
+                        "lwala kadawa health centre"="Lwala kadawa hc",
+                        "maseno university health centre"="Maseno university H/C",
+                        "maseno mission hospital"="Maseno mission hospital",
+                        "bodi health centre"="Bodi Health Centre",
+                        "manyuanda sc hospital"="Manyuanda S.C.Hospital",
+                        "barkorwa health centre"="Barkorwa C.M.Hospital",
+                        "port florence hospital"="Port Florence hospital",
+                        "kombewa county hospital"="Kombewa County Hospital",
+                        "alluc medical centre"="Alluc Medical Centre",
+                        "masaba hospital limited"="Masaba Hospital",
+                        "otieno owala health centre"="Otieno Owala H/C",
+                        "ojola sc hospital"="Ojolla S.C. Hospital",
+                        "Upper Osiri"="upper osiri", "Upper Kanyawegi"="upper kanyawegi",
+                        "Lower Kanyawegi"="Lower kanyawegi"))
+
+may.births<-crs.b.may # Clean data re-assignment
+
+# Age-bracket
+may.births$may.age.cut<-cut(may.births$mom.age,
+                            breaks=c(-Inf,17,19,29,39,49,Inf), 
+                            labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+```
+
+
+
+May{data-navmenu="Births"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total births recorded
+
+```{r}
+nrow(may.births) %>% 
+  valueBox(color="powderblue")
+```
+
+### Hospital births
+
+```{r}
+may.births %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home births
+
+```{r}
+may.births %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born alive
+
+```{r}
+may.births %>% 
+  filter(nob == "alive") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born dead
+
+```{r}
+may.births %>% 
+  filter(nob == "dead") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility births
+
+```{r}
+# (567-3)*100/567
+
+hf.may<-may.births %>% 
+  filter(place.type == 'Health Facility') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility births",
+       subtitle = "May 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.may)
+```
+
+
+### Home births
+
+```{r}
+# 3*100/567
+
+hm.may<-may.births %>% 
+  filter(place.type == 'Home') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home births",
+       subtitle = "May 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.may)
+```
+
+
+### Gender
+
+```{r}
+# length(na.omit(may.births$sex))
+
+gen.may<-may.births %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/566,1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill=c("midnightblue", "hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.may)
+
+
+```
+
+
+### Child bearing age
+```{r}
+# length(na.omit(may.births$may.age.cut))
+may.births$may.age.cut<-cut(may.births$mom.age,
+                     breaks=c(-Inf,17,19,29,39,49,Inf), 
+                     labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+may.bracket<-may.births %>% 
+  group_by(may.age.cut)  %>% 
+  summarise(Count=n(),
+            pct=round(Count*100/509,2)) %>%
+  na.omit() %>% 
+  ggplot()+
+  geom_bar(stat='identity', aes(x=may.age.cut,y=pct),
+           fill="royalblue4", alpha=0.5)+
+  labs(x="Age bracket",
+       y="pct [%]",
+       title = "Child bearing age")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(may.bracket)
+```
+
+
+### Insights
+- 99.5% of the births are from health facilities
+
+
+- Home births were recorded in the following sub-locations;
+  
+  + Upper Osiri - 1 
+  + Upper Kanyawegi - 1
+  + Lower Kanyawegi - 1
+   
+
+
+- 97.8% of the children are born alive
+
+
+- 1.4% of the children are born dead
+
+
+- 4.13% of the mothers are below 18 years of age
+
+
+- 51.6% of the newborns are male
+
+
+- 48.4% of the newborns are female
+
+
+
+
+
+<!-- June 2023--->
+
+```{r}                             
+### June 2023
+crs.b.jun<-data.frame(read_excel(
+  "Revised Birth Template Tool 2023N .xlsx",
+  sheet = crs.b.sheets[6], col_names = TRUE))
+
+# Columns of interest
+crs.b.jun<-crs.b.jun[,c(2,3,5,6,7)]
+crs.b.jun$id<-as.integer(seq(from=2862, to=3427, by=1))
+
+# Renaming of columns
+crs.b.jun<-
+  crs.b.jun %>%
+  rename(sex = Sex...Indicate.whether.male.or.female.,
+         pob = Place.of.birth....Indicate.the.name.of.facility.or.Sublocation.of.birth.,
+         place.type = Type.of.place...Indicate.whether.Home.or.Health.Facility.,
+         mom.age = Age.of.the.mother....indicate.the.age.of.the.mother.at.the.birth.of.the.child.,
+         nob = Nature.of.birth...Indicate.whether.born.alive.or.dead.)
+
+# Column type convertion
+crs.b.jun$sex<-factor(crs.b.jun$sex)
+crs.b.jun$pob<-factor(crs.b.jun$pob)
+crs.b.jun$place.type<-factor(crs.b.jun$place.type)
+crs.b.jun$nob<-factor(crs.b.jun$nob)
+crs.b.jun$mom.age<-as.numeric(crs.b.jun$mom.age)
+
+# Factor restructuring
+crs.b.jun<-crs.b.jun %>% 
+  mutate(sex=fct_recode(sex, "female" = "Female",
+                        "male"="Male"),
+         nob=fct_recode(nob, "dead" = "Dead", "alive"="Alive"),
+         pob=fct_recode(pob, "maseno mission hospital"="MASENO MISSION HOSP",
+                        "miranga sc hospital"="MIRANGA S C HOSPITAL",
+                        "rodi health centre"="RODI H C",
+                        "ober kamoth sc hospital"="OBER KAMOTH S. C. H",
+                        "riat dispensary"="RIAT DISPENSARY",
+                        "manyuanda sc hospital"="MANYUANDA S C HOSP",
+                        "maseno university health centre"="MASENO UNIVERSITY",
+                        "alluc medical centre"="ALLUC MEDICAL CENTRE",
+                        "chulaimbo county hospital"="CHULAIMBO HOSPITAL",
+                        "langi kawino dispensary"="LANGI KAWINO DISPENSARY",
+                        "kombewa county hospital"="KOMBEWA C HOSPITAL",
+                        "port florence hospital"="PORT FLORENCE HOSPITAL",
+                        "masaba hospital limited"="MASABA HOSPITAL",
+                        "st jairus hospital"="ST.JAIRUS HOSPITAL",
+                        "Kogony"="KOGONY S/LOC", "Korando A"="KORANDO A", "Alwala"="ALWALA"))
+
+
+jun.births<-crs.b.jun # Clean data re-assignment
+
+# Age-bracket
+jun.births$jun.age.cut<-cut(jun.births$mom.age,
+                            breaks=c(-Inf,17,19,29,39,49,Inf), 
+                            labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+```
+
+
+June{data-navmenu="Births"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total births recorded
+
+```{r}
+nrow(jun.births) %>% 
+  valueBox(color="powderblue")
+```
+
+### Hospital births
+
+```{r}
+jun.births %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home births
+
+```{r}
+jun.births %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born alive
+
+```{r}
+jun.births %>% 
+  filter(nob == "alive") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born dead
+
+```{r}
+jun.births %>% 
+  filter(nob == "dead") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility births
+
+```{r}
+# (563-3)*100/566
+
+hf.jun<-jun.births %>% 
+  filter(place.type == 'Health Facility') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility births",
+       subtitle = "June 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.jun)
+```
+
+
+### Home births
+
+```{r}
+# 3*100/566
+
+hm.jun<-jun.births %>% 
+  filter(place.type == 'Home') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home births",
+       subtitle = "June 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.jun)
+```
+
+
+### Gender
+
+```{r}
+# length((jun.births$sex))
+
+gen.jun<-jun.births %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/566,1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill=c("hotpink3","midnightblue"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.jun)
+
+
+```
+
+
+### Child bearing age
+```{r}
+# length(na.omit(jun.births$jun.age.cut))
+jun.births$jun.age.cut<-cut(jun.births$mom.age,
+                     breaks=c(-Inf,17,19,29,39,49,Inf), 
+                     labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+jun.bracket<-jun.births %>% 
+  group_by(jun.age.cut)  %>% 
+  summarise(Count=n(),
+            pct=round(Count*100/553,2)) %>%
+  na.omit() %>% 
+  ggplot()+
+  geom_bar(stat='identity', aes(x=jun.age.cut,y=pct),
+           fill="royalblue4", alpha=0.5)+
+  labs(x="Age bracket",
+       y="pct [%]",
+       title = "Child bearing age")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(jun.bracket)
+```
+
+
+### Insights
+- 98.7% of the births are from health facilities
+
+
+- Home births were recorded in the following sub-locations;
+  
+  + Korando A - 1 
+  + Kogony - 1
+  + Alwala - 1
+   
+
+
+- 98.7% of the children are born alive
+
+
+- 0.88% of the children are born dead
+
+
+- 6.87% of the mothers are below 18 years of age
+
+
+- 48.8% of the newborns are male
+
+
+- 51.2% of the newborns are female
+
+
+```{r}
+### Jan-June 2023
+crs.b.all.1<-merge(x=crs.b.jan, y=crs.b.feb, all=TRUE)
+crs.b.all.2<-merge(x=crs.b.mar, y=crs.b.apr, all=TRUE)
+crs.b.all.3<-merge(x=crs.b.may, y=crs.b.jun, all=TRUE)
+
+crs.b.all.4<-merge(x=crs.b.all.1, y=crs.b.all.2, all=TRUE)
+
+jan.jun.b<-merge(x=crs.b.all.3, y=crs.b.all.4, all=TRUE) # Merging all returns 
+
+```
+
+
+
+
+All{data-navmenu="Births"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total births recorded
+
+```{r}
+nrow(jan.jun.b) %>% 
+  valueBox(color="powderblue")
+```
+
+### Hospital births
+
+```{r}
+jan.jun.b %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home births
+
+```{r}
+jan.jun.b %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born alive
+
+```{r}
+jan.jun.b %>% 
+  filter(nob == "alive") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Children born dead
+
+```{r}
+jan.jun.b %>% 
+  filter(nob == "dead") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility births
+
+```{r}
+hf.jan.jun<-jan.jun.b %>% 
+  filter(place.type == 'Health Facility') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility births",
+       subtitle = "June 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.jan.jun)
+```
+
+
+### Home births
+
+```{r}
+hm.jan.jun<-jan.jun.b %>% 
+  filter(place.type == 'Home') %>%
+  group_by(pob) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pob,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home births",
+       subtitle = "Jan-June 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.jan.jun)
+```
+
+
+### Gender
+
+```{r}
+# length((jun.births$sex))
+
+gen.jan.jun<-jan.jun.b %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/na.omit(nrow(jan.jun.b)),1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill=c("hotpink3","midnightblue"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.jan.jun)
+```
+
+
+### Child bearing age
+```{r}
+# length(na.omit(jun.births$jun.age.cut))
+jan.jun.b$age.grp<-cut(jan.jun.b$mom.age,
+                     breaks=c(-Inf,17,19,29,39,49,Inf), 
+                     labels=c("Below 18 yrs","18-19","20-29","30-39","40-49","50+"))
+
+all.age.grp<-jan.jun.b %>% 
+  group_by(age.grp)  %>% 
+  summarise(Count=n(),
+            pct=round(Count*100/na.omit(nrow(jan.jun.b)),2)) %>%
+  na.omit() %>% 
+  ggplot()+
+  geom_bar(stat='identity', aes(x=age.grp,y=pct),
+           fill="royalblue4", alpha=0.5)+
+  labs(x="Age bracket",
+       y="pct [%]",
+       title = "Child bearing age")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(all.age.grp)
+```
+
+
+### Insights
+- 99.5% of the births are from health facilities
+
+
+- Home births were recorded in the following sub-locations;
+  
+  + Lower Kombewa - 3 
+  + Korando A - 2
+  + Korando B - 2
+  + Lower Kanyawegi - 2 
+  + Kit Mikayi - 1
+  + East Reru - 1
+  + Bar A - 1 
+  + Kogony - 1
+  + Alwala - 1
+  + Upper Osiri - 1
+  + Upper Kanyawegi - 1
+
+- 98.1% of the children are born alive
+
+
+- 1.9% of the children are born dead
+
+
+- 5.16% of the mothers are below 18 years of age
+
+
+- 49.8% of the newborns are male while 50.1% of the newborns are female
+
+
+
+
+<!-- Deaths 2023-->
+
+
+
+```{r}
+crs.d.sheets<-excel_sheets( # Death template 2023 excel sheets
+  "DEATH TEMPLATE FROM JAN 2023.xlsx")
+
+
+### January 2023 returns
+crs.d.jan<-data.frame(read_excel(
+  "DEATH TEMPLATE FROM JAN 2023.xlsx",
+  sheet = crs.d.sheets[1], col_names = TRUE)
+)
+
+# glimpse(crs.d.jan) # 238 cases vs 14 columns
+# crs.d.jan[duplicated(crs.d.jan), ] # No duplicates 
+# in Jan 23 returns
+# crs.d.jan[!complete.cases(crs.d.jan),] # No missing values
+
+# Columns of interest
+crs.d.jan<-crs.d.jan[,c(3,4,5,6,8,9,11)]
+# crs.d.jan$id<-as.integer(seq(from=1, to=,533 ,by=1))
+
+# Removing the NA rows
+crs.d.jan<-crs.d.jan[c(-36,-60),]
+
+# Renaming of columns
+crs.d.jan<-
+  crs.d.jan %>%
+  rename(dod=Date.of.Death...dd.mm.yy.,
+         sex=Sex...Indicate.whether.male.or.female.,
+         age=Age....Indicate.number.eg.1.2.3.,
+         age.unit=Unit.of.age....Days..Months.or.Years.,
+         pod=Place.of.death....Indicate.the.name.of.exact.place.of.death.,
+         place.type=Type.of.place...Indicate.whether.Home.or.Health.Institution.,
+         cod=Cause.of.death....Indicate.the.underlying.cause.of.death.,
+         )
+
+# Column type convertion
+crs.d.jan$sex<-factor(crs.d.jan$sex)
+crs.d.jan$pod<-factor(crs.d.jan$pod)
+crs.d.jan$place.type<-factor(crs.d.jan$place.type)
+crs.d.jan$cod<-factor(crs.d.jan$cod)
+crs.d.jan$age.unit<-factor(crs.d.jan$age.unit)
+
+# Factor restructuring
+crs.d.jan<-crs.d.jan %>% 
+  mutate(sex=fct_recode(sex, "male"="Male",
+                        "female"="Female"),
+         age.unit=fct_recode(age.unit, "years"="Years",
+                             "days"="Days","months"="Months",
+                             "not stated"="Not Stated"),
+         pod=fct_recode(pod, "West Reru"="west reru",
+                        "West Kadinga"="west kadinga",
+                        "West Kanyadwera"="west kanyadwera",
+                        "North Alungo"="north alungo",
+                        "East Kanyadwera"="east kanyadwea",
+                        "East Kanyadwera"="east kanyadwera",
+                        "East Kadinga"="east kadinga",
+                        "North Ratta"="north ratta",
+                        "East Karateng'"="east karateng",
+                        "East Karateng'"="East karateng'",
+                        "Korando B"="korando B",
+                        "Kaila"="kaila", "Ang'oga"="Angoga",
+            "chulaimbo county hospital"="Chulaimbo Hospital",
+            "kombewa county hospital"="Kombewa County Hospital",
+            "manyuanda sc hospital"="manyuanda hospital",
+            "manyuanda sc hospital"="manyuanda s.c.hosp",
+            "manyuanda sc hospital"="manyuanda hosp",
+            "maseno mission hospital"="Maseno mission hospital",
+            "port florence hospital"="Port Florence Hospital",
+            "st jairus hospital"="St Jairus Hospital"),
+         cod=fct_recode(cod, "Anaemia"="anaemia","Arthritis"="arthritis",
+                        "Asthma"="asthma","Malaria"="malaria",
+                    "Pneumonia"="Pneomonia","Pneumonia"="pneumonia","Tuberculosis"="tuberculosis",
+                "Sudden Death"="Sudden death","Sudden Death"="sudden death",
+                "Unspecified Cancer"="Unspecified cancer",
+      "Birth Asphyxia And Birth Trauma"="Birth asphyxia and birth trauma",
+      "Cervix Uteri Cancer"="Cervix uteri cancer",
+      "Diabetes Mellitus"="Diabetes mellitus",
+      "Hypertensive Disease"="Hypertensive disease",
+      "Oesophageal Atresia"="Oesophageal atresia",
+      "Oesophagus Cancer"="Oesophagus cancer",
+      "Old Age"="old age","Prostate Cancer"="Prostate cancer",
+      "Respiratory Infections"="Respiratory infections",
+      "Tetanus"="tetanus","Urinary Obstruction"="urinay obstruction",
+      "Wild Animal Attack"="Wild animal attack"))
+```
+
+
+
+January{data-navmenu="Deaths"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total registered deaths
+
+```{r}
+nrow(crs.d.jan) %>% 
+  valueBox(color="powderblue")
+```
+
+### Health facility deaths 
+
+```{r}
+crs.d.jan %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home deaths 
+
+```{r}
+crs.d.jan %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Current deaths
+
+```{r}
+crs.d.jan %>% 
+  filter(dod > "2022-06-01") %>% 
+  na.omit() %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+### Late deaths(before June 2022)
+
+```{r}
+crs.d.jan %>% 
+  filter(dod < "2022-06-01") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility deaths (current)
+
+```{r}
+hf.crs.d.jan<-crs.d.jan %>% 
+  filter(place.type == 'Health Facility', 
+         dod > "2022-06-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility deaths",
+       subtitle = "January 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.crs.d.jan)
+```
+
+
+### Home deaths (current)
+
+```{r}
+hm.crs.d.jan<-crs.d.jan %>% 
+  filter(place.type == 'Home',
+         dod > "2022-06-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home deaths",
+       subtitle = "January 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.crs.d.jan)
+```
+
+
+### Gender (current)
+
+```{r}
+# length((jun.births$sex))
+
+gen.crs.d.jan<-crs.d.jan %>%
+  filter(dod > "2022-06-01") %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/201,1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill=c("midnightblue","hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.crs.d.jan)
+```
+
+
+### Causes of death (current)
+
+```{r}
+death.crs.d.jan<-crs.d.jan %>%
+  filter(dod > "2022-06-01") %>% 
+  group_by(cod)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/201,1)) %>%
+  arrange(desc(pct)) %>% 
+  head(n=5) %>% 
+  ggplot(aes(x=reorder(cod, pct), y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill="royalblue4")+
+  labs(x="Cause of death",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(death.crs.d.jan)
+```
+
+
+
+### Insights
+- 85.17% of the deaths were registered as current
+
+- 78.82% of the registered deaths occurred at home
+
+- Kombewa County Hospital registered the highest number of current deaths (50%) amongst the health facilities
+
+- Kogony sub-location registered the highest number of current deaths (8.6%) amongst the sub-locations  
+
+- 51.7% of the registered deaths are male, 43.8% are female
+
+- Malaria resulted in as the highest cause of death ,claiming 26.4% of the registered deaths  
+
+
+```{r}
+### February 2023 returns
+crs.d.feb<-data.frame(read_excel(
+  "DEATH TEMPLATE FROM JAN 2023.xlsx",
+  sheet = crs.d.sheets[2], col_names = TRUE)
+)
+
+# glimpse(crs.d.feb) # 120 cases vs 14 columns
+# crs.d.feb[duplicated(crs.d.feb), ] # No duplicates 
+# in Feb 23 returns
+# crs.d.feb[!complete.cases(crs.d.feb),] # 34 NAs
+
+# Columns of interest
+crs.d.feb<-crs.d.feb[,c(3,4,5,6,8,9,11)]
+# crs.d.jan$id<-as.integer(seq(from=237, to=,355 ,by=1))
+
+# Removing the NA rows
+crs.d.feb<-crs.d.feb[-34,]
+
+
+# Renaming of columns
+crs.d.feb<-
+  crs.d.feb %>%
+  rename(dod=Date.of.Death...dd.mm.yy.,
+         sex=Sex...Indicate.whether.male.or.female.,
+         age=Age....Indicate.number.eg.1.2.3.,
+         age.unit=Unit.of.age....Days..Months.or.Years.,
+         pod=Place.of.death....Indicate.the.name.of.exact.place.of.death.,
+         place.type=Type.of.place...Indicate.whether.Home.or.Health.Institution.,
+         cod=Cause.of.death....Indicate.the.underlying.cause.of.death.,
+  )
+
+# Column type convertion
+crs.d.feb$sex<-factor(crs.d.feb$sex)
+crs.d.feb$pod<-factor(crs.d.feb$pod)
+crs.d.feb$place.type<-factor(crs.d.feb$place.type)
+crs.d.feb$cod<-factor(crs.d.feb$cod)
+crs.d.feb$age.unit<-factor(crs.d.feb$age.unit)
+
+
+# Factor restructuring
+crs.d.feb<-crs.d.feb %>% 
+  mutate(sex=fct_recode(sex, "male"="Male",
+                           "female"="Female"),
+         age.unit=fct_recode(age.unit, "years"="Years",
+                                      "months"="Months"),
+         pod=fct_recode(pod, "Ang'oga"="Angoga",
+                             "kombewa county hospital"="Kombewa Hospital",
+                             "kombewa county hospital"="Kombewa County Hospital",
+                             "port florence hospital"="Port Florence Hospital",
+                        "port florence hospital"="Port Florence hospital",
+                        "nyahera sc hospital"="Nyahera S C Hospital",
+                        "maseno mission hospital"="Maseno Mission Hospital",
+                        "masaba hospital limited"="Masaba Hospital Limited"),
+         cod=fct_recode(cod, "Cerebrovascular Disease"="Cerebrovascular disease",
+                        "Diabetes Mellitus"="Diabetes mellitus",
+                        "Diarrhoeal Diseases"="Diarrhoeal diseases",
+                        "Drowning"="drowning","Epilepsy"="epilepsy",
+                        "Hypertensive Disease"="Hypertensive disease",
+                        "Liver Cancer"="Liver cancer","Malaria"="malaria",
+                        "Mob Justice"="mob justice","Liver Cirrhosis"="liver Cirrhosis",
+                        "Mouth And Oropharynx Cancers"="Mouth and oropharynx cancers",
+                        "Other Causes"="Other causes","Respiratory Infections"="Respiratory infections",
+                        "Road Traffic Accidents"="road traffic accidents",
+                        "Unspecified Cancer"="Unspecified cancer",
+                        "Urinay Obstruction"="urinay obstruction",
+                        "Wild Animal Attack"="Wild animal attack"))
+
+```
+
+
+
+
+February{data-navmenu="Deaths"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Total registered deaths
+
+```{r}
+nrow(crs.d.feb) %>% 
+  valueBox(color="powderblue")
+```
+
+### Health facility deaths
+
+```{r}
+crs.d.feb %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home deaths
+
+```{r}
+crs.d.feb %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Current deaths
+
+```{r}
+crs.d.feb %>% 
+  filter(dod > "2022-07-01")  %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+### Late deaths(before July 2022)
+
+```{r}
+crs.d.feb %>% 
+  filter(dod < "2022-07-01") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility deaths (current)
+
+```{r}
+hf.crs.d.feb<-crs.d.feb %>% 
+  filter(place.type == 'Health Facility', 
+         dod > "2022-07-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility deaths",
+       subtitle = "February 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.crs.d.feb)
+```
+
+
+### Home deaths (current)
+
+```{r}
+hm.crs.d.feb<-crs.d.feb %>% 
+  filter(place.type == 'Home',
+         dod > "2022-07-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home deaths",
+       subtitle = "February 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.crs.d.feb)
+```
+
+
+### Gender (current)
+
+```{r}
+# length((jun.births$sex))
+
+gen.crs.d.feb<-crs.d.feb %>%
+  filter(dod > "2022-07-01") %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/86,1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill=c("midnightblue","hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.crs.d.feb)
+```
+
+
+### Causes of death (current)
+
+```{r}
+death.crs.d.feb<-crs.d.feb %>%
+  filter(dod > "2022-07-01") %>% 
+  group_by(cod)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/86,1)) %>%
+  arrange(desc(pct)) %>% 
+  head(n=5) %>% 
+  ggplot(aes(x=reorder(cod, pct), y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill="royalblue4")+
+  labs(x="Cause of death",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(death.crs.d.feb)
+```
+
+
+
+### Insights
+- 72.27% of the deaths were registered as current
+
+- 73.9% of the registered deaths occurred at home
+
+- Kombewa County Hospital registered the highest number of current deaths (54.8%) amongst the health facilities
+
+- Lower Osiri sub-location registered the highest number of current deaths (11.36%) amongst the sub-locations 
+
+- 58.1% of the registered deaths are male, 41.9% are female
+
+- Sudden death is the leading cause of current registered deaths - 12.8% 
+
+
+
+```{r}
+### March 2023 returns
+crs.d.mar<-data.frame(read_excel(
+  "DEATH TEMPLATE FROM JAN 2023.xlsx",
+  sheet = crs.d.sheets[3], col_names = TRUE)
+)
+
+# glimpse(crs.d.mar) # 238 cases vs 14 columns
+# crs.d.mar[duplicated(crs.d.mar), ] # No duplicates 
+# in Mar 23 returns
+# crs.d.mar[!complete.cases(crs.d.mar),] # No missing values
+
+# Columns of interest
+crs.d.mar<-crs.d.mar[,c(3,4,5,6,8,9,11)]
+
+# Removing the NA rows
+crs.d.mar<-crs.d.mar[-39,]
+
+# crs.d.mar$id<-as.integer(seq(from=356, to=,499 ,by=1))
+
+# Renaming of columns
+crs.d.mar<-
+  crs.d.mar %>%
+  rename(dod=Date.of.Death...dd.mm.yy.,
+         sex=Sex...Indicate.whether.male.or.female.,
+         age=Age....Indicate.number.eg.1.2.3.,
+         age.unit=Unit.of.age....Days..Months.or.Years.,
+         pod=Place.of.death....Indicate.the.name.of.exact.place.of.death.,
+         place.type=Type.of.place...Indicate.whether.Home.or.Health.Institution.,
+         cod=Cause.of.death....Indicate.the.underlying.cause.of.death.,
+         )
+
+# Column type convertion
+crs.d.mar$sex<-factor(crs.d.mar$sex)
+crs.d.mar$pod<-factor(crs.d.mar$pod)
+crs.d.mar$place.type<-factor(crs.d.mar$place.type)
+crs.d.mar$cod<-factor(crs.d.mar$cod)
+crs.d.mar$age.unit<-factor(crs.d.mar$age.unit)
+
+# Factor restructuring
+crs.d.mar<-crs.d.mar %>% 
+  mutate(sex=fct_recode(sex,"female"="Female"),
+         age.unit=fct_recode(age.unit, "years"="Years",
+                             "months"="Months"),
+         place.type=fct_recode(place.type, "Health Facility"="Health facility","Home"="home"),
+         pod=fct_recode(pod, "Kisian"="kisian",
+                        "South Kapuonja"="south kapuonja",
+                        "Upper Kombewa"="upper kombewa",
+                        "North Ratta"="north ratta","East Ngere"="East ngere",
+                        "Kitmikayi"="kitmikayi","East Othany"="East othany",
+                        "Kaila"="kaila","East Karateng"="east karateng",
+                        "Upper Kadongo"="upper kadongo","Lower Kadongo"="lower kadongo",
+                        "Nyahera"="nyahera","Marera"="marera","East Kadinga"="east kadinga",
+                        "Dago"="dago","Lower Osiri"="lower osiri","North Kapuonja"="north kapuonja",
+                        "East Kolunje"="east kolunje","Ang'oga"="angoga","West Karateng"="west karateng",
+                        "Kajulu Koker"="kajulu koker","masaba hospital limited"="masaba hospital",
+                        "Korando A"="korando A","maseno mission hospital"="Maseno mission hospital",
+                        "manyuanda sc hospital"="Manyuanda hospital",
+                        "kombewa county hospital"="Kombewa county hosp",
+                        "st jairus hospital"="St jairus hospital",
+                        "West Karateng"="West karateng","Ang'oga"="Angoga",
+                        "East Kadinga"="East kadinga","South Kapuonja"="South kapuonja",
+                        "West Kadinga"="west kadinga","South Alungo"="South alungo",
+                        "East Kanyadwera"="East kanyadwera","Lower Kombewa"="Lower kombewa",
+                        "West Kanyadwera"="West kanyadwera","Upper Kombewa"="Upper kombewa",
+                        "West Othany"="West othany","West Ngere"="West ngere","West Reru"="West reru",
+                        "East Reru"="East reru","Upper Kanyawegi"="Upper kanyawegi",
+                        "Upper Osiri"="Upper osiri","Lower Kadongo"="Lower kadongo","Lower Osiri"="Lower osiri",
+                        "Kajulu Koker"="Kajulu koker"),
+         cod=fct_recode(cod, "Alcoholism"="alcoholism","Anaemia"="anaemia","Arthritis"="arthritis",
+                        "Asthma"="asthma","Cancer"="cancer","Cervix Uteri Cancer"="Cervix uteri cancer",
+                        "Cholera"="cholera","Diabetes Mellitus"="diabetes mellitus","Diarrhoeal Diseases"="Diarrhoeal diseases",
+                        "Electrocution_lightning"="Electrocution/ lightning","Head Injury"="head injury",
+                        "HIV"="hiv","Liver Cirrhosis"="liver Cirrhosis","Malaria"="malaria",
+                        "Meningitis"="meningitis","Oesophageal Atresia"="Oesophageal atresia","Oesophagus cancer"="Oesophagus Cancer",
+                        "Old Age"="old age","Peuperal Sepsis"="peuperal sepsis","Pneumonia"="pneumonia","Prostate Cancer"="Prostate cancer",
+                        "Road Traffic Accidents"="road traffic accidents","Road Traffic Accidents"="Road traffic accidents",
+                        "Stroke"="stroke","Sudden Death"="sudden death","Tuberculosis"="tuberculosis","Ulcers"="ulcers","Urinay Obstruction"="urinay obstruction"
+                        ))                            
+
+```
+
+
+March{data-navmenu="Deaths"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total registered deaths
+
+```{r}
+nrow(crs.d.mar) %>%
+  valueBox(color="powderblue")
+```
+
+### Hospital deaths
+
+```{r}
+crs.d.mar %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home deaths
+
+```{r}
+crs.d.mar%>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Current deaths
+
+```{r}
+crs.d.mar %>% 
+  filter(dod > "2022-08-01")  %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+### Late deaths(before August 2022)
+
+```{r}
+crs.d.mar %>% 
+  filter(dod < "2022-08-01") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility deaths (current)
+
+```{r}
+hf.crs.d.mar<-crs.d.mar %>% 
+  filter(place.type == 'Health Facility', 
+         dod > "2022-08-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility deaths",
+       subtitle = "March 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.crs.d.mar)
+```
+
+
+### Home deaths (current)
+
+```{r}
+hm.crs.d.mar<-crs.d.mar%>% 
+  filter(place.type == 'Home', 
+         dod > "2022-08-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home deaths",
+       subtitle = "March 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.crs.d.mar)
+```
+
+
+### Gender (current)
+
+```{r}
+# length((jun.births$sex))
+
+gen.crs.d.mar<-crs.d.mar %>%
+  filter(dod > "2022-08-01") %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/106,1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8,fill=c("midnightblue","hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.crs.d.mar)
+```
+
+
+### Causes of death (current)
+
+```{r}
+death.crs.d.mar<-crs.d.mar %>%
+  filter(dod > "2022-08-01") %>% 
+  group_by(cod)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/106,1)) %>%
+  arrange(desc(pct)) %>% 
+  head(n=5) %>% 
+  ggplot(aes(x=reorder(cod, pct), y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill="royalblue4")+
+  labs(x="Cause of death",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(death.crs.d.mar)
+```
+
+
+### Insights
+- 73.6% of the deaths were registered as current
+
+- 77.8% of the registered deaths occurred at home
+
+- Kombewa County Hospital registered the highest number of current deaths (37.5%) amongst the health facilities
+
+- Kajulu-Koker sub-location registered the highest number of current deaths (9.12%) amongst the sub-locations  
+
+- 55.7% of the registered deaths are male, 44.3% are female
+
+- Malaria is the leading cause of current registered deaths - 12.8% 
+
+
+
+```{r}
+### April 2023 returns
+crs.d.apr<-data.frame(read_excel(
+  "DEATH TEMPLATE FROM JAN 2023.xlsx",
+  sheet = crs.d.sheets[4], col_names = TRUE)
+)
+
+# glimpse(crs.d.apr) # 117 cases vs 16 columns
+
+# crs.d.apr[duplicated(crs.d.apr), ] # No duplicates 
+# in Apr 23 returns
+
+# crs.d.apr[!complete.cases(crs.d.apr),] # 117 rows of NAs
+
+# Columns of interest
+crs.d.apr<-crs.d.apr[,c(3,4,5,6,8,9,11)]
+
+# Removing the NA rows
+crs.d.apr<-crs.d.apr[-34,]
+
+# crs.d.apr$id<-as.integer(seq(from=500, to=616, by=1))
+
+# Renaming of columns
+crs.d.apr<-
+  crs.d.apr %>%
+  rename(dod=Date.of.Death...dd.mm.yy.,
+         sex=Sex...Indicate.whether.male.or.female.,
+         age=Age....Indicate.number.eg.1.2.3.,
+         age.unit=Unit.of.age....Days..Months.or.Years.,
+         pod=Place.of.death....Indicate.the.name.of.exact.place.of.death.,
+         place.type=Type.of.place...Indicate.whether.Home.or.Health.Institution.,
+         cod=Cause.of.death....Indicate.the.underlying.cause.of.death.,
+  )
+
+# Column type convertion
+crs.d.apr$sex<-factor(crs.d.apr$sex)
+crs.d.apr$pod<-factor(crs.d.apr$pod)
+crs.d.apr$place.type<-factor(crs.d.apr$place.type)
+crs.d.apr$cod<-factor(crs.d.apr$cod)
+crs.d.apr$age.unit<-factor(crs.d.apr$age.unit)
+
+
+# Factor restructuring
+crs.d.apr<-crs.d.apr %>% 
+  mutate(sex=fct_recode(sex,"female"="Female","male"="Male"),
+         age.unit=fct_recode(age.unit, "years"="Years",
+                             "months"="Months", "NA"="Not Stated"),
+         pod=fct_recode(pod, "manyuanda sc hospital"="Manyuanda S C Hospital",
+                        "port florence hospital"="Port Florence Hospital",
+                        "kombewa county hospital"="Kombewa County Hospital",
+                        "masaba hospital limited"="Masaba Hospital Limited"),
+         cod=fct_recode(cod, "Urinay Obstruction"="urinay obstruction",
+                        "Inflammatory Heart Diseases"="Inflammatory heart diseases",
+                        "Cervix Uteri Cancer"="Cervix uteri cancer",
+                        "Prematurity And Low Birth Weight"="Prematurity and low birth weight",
+                        "Hypertensive Disease"="Hypertensive  disease",
+                        "Maternal Sepsis"="Maternal sepsis",
+                        "Respiratory Infections"="Respiratory infections",
+                        "Other Causes"="Other causes","Diabetes Mellitus"="Diabetes mellitus")
+           )
+```
+
+
+April{data-navmenu="Deaths"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total registered deaths
+
+```{r}
+nrow(crs.d.apr) %>%
+  valueBox(color="powderblue")
+```
+
+### Hospital deaths
+
+```{r}
+crs.d.apr %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home deaths
+
+```{r}
+crs.d.apr%>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Current deaths
+
+```{r}
+crs.d.apr %>% 
+  filter(dod > "2022-09-01")  %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+### Late deaths(before September 2022)
+
+```{r}
+crs.d.apr %>% 
+  filter(dod < "2022-09-01") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility deaths (current)
+
+```{r}
+hf.crs.d.apr<-crs.d.apr %>% 
+  filter(place.type == 'Health Facility', 
+         dod > "2022-09-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility deaths",
+       subtitle = "April 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.crs.d.apr)
+```
+
+
+### Home deaths (current)
+
+```{r}
+hm.crs.d.apr<-crs.d.apr%>% 
+  filter(place.type == 'Home', 
+         dod > "2022-09-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home deaths",
+       subtitle = "April 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.crs.d.apr)
+```
+
+
+### Gender (current)
+
+```{r}
+# length((jun.births$sex))
+
+gen.crs.d.apr<-crs.d.apr %>%
+  filter(dod > "2022-09-01") %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/84,1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8,fill=c("hotpink3","midnightblue"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.crs.d.apr)
+```
+
+
+### Causes of death (current)
+
+```{r}
+death.crs.d.apr<-crs.d.apr %>%
+  filter(dod > "2022-09-01") %>% 
+  group_by(cod)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/84,1)) %>%
+  arrange(desc(pct)) %>% 
+  head(n=5) %>% 
+  ggplot(aes(x=reorder(cod, pct), y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill="royalblue4")+
+  labs(x="Cause of death",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(death.crs.d.apr)
+```
+
+
+### Insights
+- 72.4% of the deaths were registered as current
+
+- 80.2% of the registered deaths occurred at home
+
+- Kombewa County Hospital registered the highest number of current deaths (56.5%) amongst the health facilities
+
+- North Ratta sub-location registered the highest number of current deaths (8.6%) amongst the sub-locations  
+
+- 45.2% of the registered deaths are male, 54.8% are female
+
+- Malaria is the leading cause of current registered deaths - 16.7% 
+
+
+
+```{r}
+### May 2023 returns
+crs.d.may<-data.frame(read_excel(
+  "DEATH TEMPLATE FROM JAN 2023.xlsx",
+  sheet = crs.d.sheets[5], col_names = TRUE)
+)
+
+# glimpse(crs.d.may) # 107 cases vs 16 columns
+
+# crs.d.may[duplicated(crs.d.may), ] # No duplicates 
+# in May 23 returns
+
+# crs.d.may[!complete.cases(crs.d.may),] %>% nrow() # 107 rows of NAs
+
+
+# Columns of interest
+crs.d.may<-crs.d.may[,c(3,4,5,6,8,9,11)]
+
+# Removing the NA rows
+crs.d.may<-crs.d.may[-23,]
+
+# crs.d.may$id<-as.integer(seq(from=616, to=722, by=1))
+
+# Renaming of columns
+crs.d.may<-
+  crs.d.may %>%
+  rename(dod=Date.of.Death...dd.mm.yy.,
+         sex=Sex...Indicate.whether.male.or.female.,
+         age=Age....Indicate.number.eg.1.2.3.,
+         age.unit=Unit.of.age....Days..Months.or.Years.,
+         pod=Place.of.death....Indicate.the.name.of.exact.place.of.death.,
+         place.type=Type.of.place...Indicate.whether.Home.or.Health.Institution.,
+         cod=Cause.of.death....Indicate.the.underlying.cause.of.death.,
+  )
+
+# Column type convertion
+crs.d.may$sex<-factor(crs.d.may$sex)
+crs.d.may$pod<-factor(crs.d.may$pod)
+crs.d.may$place.type<-factor(crs.d.may$place.type)
+crs.d.may$cod<-factor(crs.d.may$cod)
+crs.d.may$age.unit<-factor(crs.d.may$age.unit)
+
+
+# Factor restructuring
+crs.d.may<-crs.d.may %>% 
+  mutate(sex=fct_recode(sex,"male"="Male"),
+         age.unit=fct_recode(age.unit, "years"="Years"),
+         place.type=fct_recode(place.type, "Home"="home"),
+         pod=fct_recode(pod, "Upper Kadongo"="upper kadongo",
+                        "West Katieno"="west katieno","Upper Kanyawegi"="upper kanyawegi",
+                        "Ang'oga"="angoga","Kajulu Koker"="kajulu koker","South Ratta"="south ratta",
+                        "Nyahera"="nyahera","East Kanyadwera"="East kanyadwera","newa"="newa",
+                        "East Othany"="East othany","West Karateng"="West karateng","Ojola"="ojolla",
+                        "Kanyawegi"="kanyawegi","Kaila"="kaila","North Ratta"="north ratta",
+                        "Lower Osiri"="lower osiri","Marera"="marera","st jairus hospital"="St jairus hospital",
+                        "masaba hospital limited"="Masaba hospital","East Reru"="East reru",
+                        "North Ratta"="North ratta","East Karateng"="East karateng",
+                        "South Ratta"="South ratta","West Karateng"="west karateng","Maseno Township"="maseno township",
+                        "Upper Osiri"="upper osiri","West Reru"="west reru","Sunga "="sunga",
+                        "West Ngere"="west ngere"),
+         cod=fct_recode(cod, "Sudden Death"="sudden death","Malaria"="malaria",
+                        "Cancer"="cancer","Unspecified Cancer"="Unspecified cancer",
+                        "Tuberculosis"="tuberculosis","Alcoholism"="alcoholism",
+                        "Septicaemia"="septicaemia","Stroke"="stroke","Prostate Cancer"="Prostate cancer",
+                        "Oesophagus Cancer"="Oesophagus cancer","Diabetes Mellitus"="Diabetes mellitus",
+                        "Anaemia"="anaemia","HIV"="hiv","Candidiasis"="candidiasis",
+                        "Arthritis"="arthritis","Asthma"="asthma","Tetanus"="tetanus",
+                        "Mob Justice"="mob justice","Stomach Cancer"="Stomach cancer",
+                        "Measles"="measles","Drowning"="drowning","Old Age"="old age")
+  )
+
+```
+
+May{data-navmenu="Deaths"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total registered deaths
+
+```{r}
+nrow(crs.d.may) %>%
+  valueBox(color="powderblue")
+```
+
+### Hospital deaths
+
+```{r}
+crs.d.may %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home deaths
+
+```{r}
+crs.d.may%>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Current deaths
+
+```{r}
+crs.d.may %>% 
+  filter(dod > "2022-10-01")  %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+### Late deaths(before October 2022)
+
+```{r}
+crs.d.may %>% 
+  filter(dod < "2022-10-01") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility deaths (current)
+
+```{r}
+hf.crs.d.may<-crs.d.may %>% 
+  filter(place.type == 'Health Facility', 
+         dod > "2022-10-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility deaths",
+       subtitle = "May 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.crs.d.may)
+```
+
+
+### Home deaths (current)
+
+```{r}
+hm.crs.d.may<-crs.d.may%>% 
+  filter(place.type == 'Home', 
+         dod > "2022-10-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home deaths",
+       subtitle = "May 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.crs.d.may)
+```
+
+
+### Gender (current)
+
+```{r}
+# length((jun.births$sex))
+
+gen.crs.d.may<-crs.d.may %>%
+  filter(dod > "2022-10-01") %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/84,1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8,fill=c("midnightblue","hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.crs.d.may)
+```
+
+
+### Causes of death (current)
+
+```{r}
+death.crs.d.may<-crs.d.may %>%
+  filter(dod > "2022-10-01") %>% 
+  group_by(cod)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/84,1)) %>%
+  arrange(desc(pct)) %>% 
+  head(n=5) %>% 
+  ggplot(aes(x=reorder(cod, pct), y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill="royalblue4")+
+  labs(x="Cause of death",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(death.crs.d.may)
+```
+
+
+### Insights
+- 79.2% of the deaths were registered as current
+
+- 80.2% of the registered deaths occurred at home
+
+- St. Jairus Hospital registered the highest number of current deaths (46.4%) amongst the health facilities
+
+- West Kolunje sub-location registered the highest number of current deaths (16.7%) amongst the sub-locations 
+
+- 56% of the registered deaths are male, 44% are female
+
+- Malaria is the leading cause of current registered deaths - 29.8% 
+
+
+
+```{r}
+### June 2023 returns
+crs.d.jun<-data.frame(read_excel(
+  "DEATH TEMPLATE FROM JAN 2023.xlsx",
+  sheet = crs.d.sheets[6], col_names = TRUE)
+)
+
+# glimpse(crs.d.jun) # 209 cases vs 14 columns
+
+# crs.d.jun[duplicated(crs.d.jun), ] # No duplicates 
+# in June 23 returns
+
+# crs.d.jun[!complete.cases(crs.d.jun),] %>% nrow()# 52 rows of NAs
+
+
+# Columns of interest
+crs.d.jun<-crs.d.jun[,c(3,4,5,6,8,9,11)]
+
+# Removing the NA rows
+crs.d.jun<-crs.d.jun[-36,]
+
+# crs.d.jun$id<-as.integer(seq(from=723, to=931, by=1))
+
+# Renaming of columns
+crs.d.jun<-
+  crs.d.jun %>%
+  rename(dod=Date.of.Death...dd.mm.yy.,
+         sex=Sex...Indicate.whether.male.or.female.,
+         age=Age....Indicate.number.eg.1.2.3.,
+         age.unit=Unit.of.age....Days..Months.or.Years.,
+         pod=Place.of.death....Indicate.the.name.of.exact.place.of.death.,
+         place.type=Type.of.place...Indicate.whether.Home.or.Health.Institution.,
+         cod=Cause.of.death....Indicate.the.underlying.cause.of.death.,
+  )
+
+
+# Column type convertion
+crs.d.jun[crs.d.jun$sex == "Not stated", 2]<-NA # Change of Not stated                                                 # to NA
+crs.d.jun$sex<-factor(crs.d.jun$sex)
+crs.d.jun$pod<-factor(crs.d.jun$pod)
+crs.d.jun$place.type<-factor(crs.d.jun$place.type)
+crs.d.jun$cod<-factor(crs.d.jun$cod)
+crs.d.jun$age.unit<-factor(crs.d.jun$age.unit)
+crs.d.jun$dod <- as.Date(crs.d.jun$dod, format="%m-%d-%y")
+
+
+# Factor restructuring
+crs.d.jun<-crs.d.jun %>% 
+  mutate(sex=fct_recode(sex,"male"="Male", "female"="Female","Not Stated"="Not stated"),
+         age.unit=fct_recode(age.unit, "years"="Years", "months"="Months"),
+         pod=fct_recode(pod, "Kapuonja"="KAPUONJA","West Karateng"="WEST KARATENG","Korando B"="KORANDO B",
+                        "West Kolunje"="WEST KOLUNJE","West Othany"="WEST OTHANY","East Reru"="EAST RERU",
+                        "Kanyawegi"="KOGADA KANYAWEGI","Karateng"="KARATENG","East Karateng"="EAST KANYADWERA",
+                        "Kajulu Koker"="KAJULU KOKER", "Kitmikayi"="KIT MIKAYI", "East Othany"="EAST OTHANY",
+                        "East Karateng"="EAST KARATENG","Kanyawegi"="KANYAWEGI","Bar A"="BAR A",
+                        "Kaila"="KAILA","Lower Kombewa"="LOWER KOMBEWA","Marera"="MARERA",
+                        "West Ngere"="WEST NGERE","West Kadinga"="WEST KADINGA","Nyahera"="NYAHERA",
+                        "West Reru"="WEST RERU","maseno mission hospital"="MASENO MISSION HOSP",
+                        "chulaimmbo county hospital"="CHULAIMBO C .HOSP","kombewa county hospital"="KOMBEWA C HOSPITAL",
+                        "port florence hospital"="PORT FLORENCE HOSPITAL","masaba hospital limited"="MASABA HOSPITAL",
+                        "st jairus hospital"="ST JAIRUS HOSPITAL","Kajulu Koker"="KAJULU-KOKER",
+                        "Korando A"="KORANDO A","West Kanyadwera"="WEST KANYADWERA","Upper Kombewa"="UPPER KOMBEWA",
+                        "Ojola"="OJOLA","Mkendwa"="MKENDWA","Dago"="DAGO","North Kapuonja"="NORTH KAPUONJA",
+                        "Kadero"="KADERO","East Ngere"="EAST NGERE","South Kapuonja"="SOUTH KAPUONJA",
+                        "Kogony"="KOGONY","Ang'oga"="ANGOGA","Alwala"="ALWALA","East Kadinga"="EAST KADINGA"),
+         cod=fct_recode(cod, "Sudden Death"="Sudden death","Urinary Obstruction"="urinay obstruction",
+                        "Diarrhoeal Diseases"="Diarrhoeal diseases","Breast Cancer"="Breast cancer",
+                        "Renal Agenesis"="Renal agenesis","Peptic Ulcer"="Peptic ulcer",
+                        "Road Traffic Accidents"="Road traffic accidents","Diabetes Mellitus"="Diabetes mellitus",
+                        "Liver Cirrhosis"="liver Cirrhosis","Oesophageal Atresia"="Oesophageal atresia",
+                        "Kidney Failure"="Kidney failure","HIV"="AIDS","HIV"="Aids",
+                        "Prematurity And Low Birth Weight"="Prematurity and low birth weight")
+  )
+
+```
+
+
+
+June{data-navmenu="Deaths"}
+=========================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total registered deaths
+
+```{r}
+nrow(crs.d.jun) %>%
+  valueBox(color="powderblue")
+```
+
+### Hospital deaths
+
+```{r}
+crs.d.jun %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Home deaths
+
+```{r}
+crs.d.jun%>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Current deaths
+
+```{r}
+crs.d.jun %>% 
+  filter(dod > "2022-11-01")  %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+### Late deaths(before November 2022)
+
+```{r}
+crs.d.jun %>% 
+  filter(dod < "2022-11-01") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility deaths (current)
+
+```{r}
+hf.crs.d.jun<-crs.d.jun %>% 
+  filter(place.type == 'Health Facility', 
+         dod > "2022-11-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility deaths",
+       subtitle = "June 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.crs.d.jun)
+```
+
+
+### Home deaths (current)
+
+```{r}
+hm.crs.d.jun<-crs.d.jun%>% 
+  filter(place.type == 'Home', 
+         dod > "2022-11-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home deaths",
+       subtitle = "June 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.crs.d.jun)
+```
+
+
+### Gender (current)
+
+```{r}
+# length((jun.births$sex))
+
+gen.crs.d.jun<-crs.d.jun %>%
+  filter(dod > "2022-11-01") %>% 
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/175,1)) %>% 
+  arrange(desc(pct)) %>% 
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8,fill=c("midnightblue","hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.crs.d.jun)
+```
+
+
+### Causes of death (current)
+
+```{r}
+death.crs.d.jun<-crs.d.jun %>%
+  filter(dod > "2022-11-01") %>% 
+  group_by(cod)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/208,1)) %>%
+  arrange(desc(pct)) %>% 
+  head(n=5) %>% 
+  ggplot(aes(x=reorder(cod, pct), y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill="royalblue4")+
+  labs(x="Cause of death",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(death.crs.d.jun)
+```
+
+
+### Insights
+- 84.2% of the deaths were registered as current
+
+- 82.3% of the registered deaths occurred at home
+
+- Kombewa County Hospital registered the highest number of current deaths (45.9%) amongst the health facilities
+
+- North Kapuonja sub-location registered the highest number of current deaths (8.72%) amongst the sub-locations  
+
+- 58.3% of the registered deaths are male, 41.7% are female
+
+- Malaria is the leading cause of current registered deaths - 12% 
+
+
+```{r}
+# Jan-Jun 2023
+### Jan-Jun 2023 deaths
+crs.d.all.1<-merge(x=crs.d.jan, y=crs.d.feb, all=T)
+crs.d.all.2<-merge(x=crs.d.mar, y=crs.d.apr,all=T)                
+crs.d.all.3<-merge(x=crs.d.may, y=crs.d.jun, all=T)
+crs.d.all.4<-merge(x=crs.d.all.1, y=crs.d.all.2, all=T)
+jan.jun.d<-merge(x=crs.d.all.3, y=crs.d.all.4, all=T) # Merging all returns 
+
+```
+
+
+
+All{data-navmenu="Deaths"}
+================================================================
+
+Row
+-----------------------------------------------------------------------
+### Total registered deaths
+
+```{r}
+nrow(jan.jun.d) %>%
+  valueBox(color="powderblue")
+```
+
+### Registered hospital deaths
+
+```{r}
+jan.jun.d %>% 
+  filter(place.type == "Health Facility") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+### Registered home deaths
+
+```{r}
+jan.jun.d %>% 
+  filter(place.type == "Home") %>% 
+  count() %>% 
+  valueBox(color="powderblue")
+```
+
+
+
+### Current deaths
+```{r}
+valueBox(737, color="powderblue")
+```
+
+
+
+### Late deaths
+```{r}
+valueBox(930-737, color="powderblue")
+```
+
+
+Row{.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Health facility deaths (Current)
+
+```{r}
+hf.jan.jun.d<-jan.jun.d %>% 
+  filter(place.type == 'Health Facility', 
+         dod > "2022-11-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  head(5) %>% 
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Health facility",
+       y="Frequency",
+       title = "K.West Top 5 health facility deaths",
+       subtitle = "Jan-June 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hf.jan.jun.d)
+```
+
+
+### Home deaths (Current) 
+
+```{r}
+hm.jan.jun.d<-jan.jun.d%>% 
+  filter(place.type == 'Home', 
+         dod > "2022-11-01") %>%
+  group_by(pod) %>% 
+  count() %>% 
+  arrange(desc(n)) %>%
+  ggplot()+
+  geom_bar(aes(x=reorder(pod,n),y=n),fill="royalblue4", alpha=0.5, stat='identity')+
+  theme(axis.text.x = element_text(angle=0, hjust=1))+
+  labs(x="Sub-location",
+       y="Frequency",
+       title = "K.West home deaths",
+       subtitle = "Jan-June 2023")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(hm.jan.jun.d)
+```
+
+
+### Gender 
+
+```{r}
+# length((jun.births$sex))
+
+gen.jan.jun.d<-jan.jun.d %>%
+  group_by(sex)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/na.omit(nrow(jan.jun.d)),1)) %>% 
+  arrange(desc(pct)) %>%
+  na.omit() %>% 
+  ggplot(aes(x=sex, y=pct))+
+  geom_bar(stat="identity", alpha=0.8,fill=c("midnightblue","hotpink3"))+
+  labs(x="Gender",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(gen.jan.jun.d)
+```
+
+
+### Registered causes of death 
+
+```{r}
+death.jan.jun.d<-jan.jun.d %>% 
+  filter(dod > "2022-11-01") %>% 
+  group_by(cod)  %>% 
+  summarise(number = n(),
+            pct = round(number*100/na.omit(nrow(jan.jun.d)),1)) %>%
+  arrange(desc(pct)) %>% 
+  head(n=5) %>% 
+  ggplot(aes(x=reorder(cod, pct), y=pct))+
+  geom_bar(stat="identity", alpha=0.8, fill="royalblue4")+
+  labs(x="Cause of death",
+       y="pct [%]")+
+  coord_flip()+
+  theme_pander()
+
+ggplotly(death.jan.jun.d)
+```
+
+
+### Insights
+- 79.2% of all the registered deaths from January 2023 to June 2023 were classified as current
+
+- 78.4% of the all registered deaths occurred at home
+
+- Kombewa County Hospital registered the highest number of current deaths (48.3%) amongst the health facilities from January 2023-June 2023
+
+- Ojola sub-location registered the highest number of current deaths (3.57%) amongst the sub-locations  
+
+- 59.4% of the registered deaths are male, 40.5% are female
+
+- Malaria is the leading cause of current registered deaths - 13.5% 
